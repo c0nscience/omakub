@@ -34,6 +34,13 @@ if [ ! -d "$HOME/.config/nvim" ]; then
 
   # Ensure editor.neo-tree is used by default
   cp ~/.local/share/omakub/configs/neovim/lazyvim.json ~/.config/nvim/
+
+  # Move custom keymaps
+  rm -rf ~/.config/nvim/lua/config/keymaps.lua
+  cp ~/.local/share/omakub/configs/neovim/keymaps.lua ~/.config/nvim/lua/config/
+
+  rm -rf ~/.config/nvim/lua/plugins/example.lua
+  cp ~/.local/share/omakub/configs/neovim/better-escape.lua ~/.config/nvim/lua/plugins/
 fi
 
 # Replace desktop launcher with one running inside Alacritty
