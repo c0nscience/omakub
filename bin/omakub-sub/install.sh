@@ -4,10 +4,8 @@ CHOICES=(
   "Dev Editor        Install alternative programming editors"
   "Dev Language      Install programming language environment"
   "Dev Database      Install development database in Docker"
-  "1password         Manage your passwords securely across devices"
   "Audacity          Record and edit audio"
   "ASDControl        Set brightness on Apple Studio and XDR displays"
-  "Brave             Chrome-based browser with built-in ad blocking"
   "Dropbox           Sync files across computers with ease"
   "Discord           Communication platform for voice, video, and text messaging"
   "Gimp              Image manipulation tool ala Photoshop"
@@ -49,6 +47,7 @@ else
   "dev-database") INSTALLER_FILE="$OMAKUB_PATH/install/terminal/select-dev-storage.sh" ;;
   "ollama") INSTALLER_FILE="$OMAKUB_PATH/install/terminal/optional/app-ollama.sh" ;;
   "tailscale") INSTALLER_FILE="$OMAKUB_PATH/install/terminal/optional/app-tailscale.sh" ;;
+  "openvpn") INSTALLER_FILE="$OMAKUB_PATH/install/terminal/optional/app-openvpn.sh" ;;
   "geekbench") INSTALLER_FILE="$OMAKUB_PATH/install/terminal/optional/app-geekbench.sh" ;;
   *) INSTALLER_FILE="$OMAKUB_PATH/install/desktop/optional/app-$INSTALLER.sh" ;;
   esac
