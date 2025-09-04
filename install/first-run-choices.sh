@@ -8,7 +8,7 @@ if [[ "$XDG_CURRENT_DESKTOP" == *"GNOME"* ]]; then
 fi
 
 AVAILABLE_LANGUAGES=("Ruby on Rails" "Node.js" "Go" "PHP" "Python" "Elixir" "Rust" "Java")
-SELECTED_LANGUAGES="Go","Node.js", "Python", "Rust", "Java"
+SELECTED_LANGUAGES="Go","Node.js","Python","Rust","Java"
 export OMAKUB_FIRST_RUN_LANGUAGES=$(gum choose "${AVAILABLE_LANGUAGES[@]}" --no-limit --selected "$SELECTED_LANGUAGES" --height 10 --header "Select programming languages")
 
 AVAILABLE_DBS=("MySQL" "Redis" "PostgreSQL")
