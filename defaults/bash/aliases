@@ -18,12 +18,31 @@ alias ....='cd ../../..'
 n() { if [ "$#" -eq 0 ]; then nvim .; else nvim "$@"; fi; }
 alias g='git'
 alias d='docker'
-alias r='rails'
-alias bat='batcat'
+alias cat='batcat'
+alias grep='rg'
 alias lzg='lazygit'
 alias lzd='lazydocker'
+alias http='xh'
+
+# OpenVPN
+alias vpn='openvpn3'
+alias vl='vpn sessions-list'
+alias vd='vpn session-manage -D -c dilax'
+
+vpnConfigure() {
+    op document get vpn-config --vault DILAX --out-file dilax.ovpn
+    vpn config-import --config dilax.ovpn --name dilax
+    rm dilax.ovpn
+  }
+
+vc() {
+    USER=$(op item get 'AD Account' --fields username --vault DILAX)
+    PW=$(op item get 'AD Account' --fields password --vault DILAX --reveal)
+    OTP=$(op item get VPN --vault DILAX --otp)
+    printf "$USER\n$PW$OTP\n" | vpn session-start --config dilax
+  }
 
 # Git
 alias gcm='git commit -m'
 alias gcam='git commit -a -m'
-alias gcad='git commit -a --amend'
+alias hogcad='git commit -a --amend'
