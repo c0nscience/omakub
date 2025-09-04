@@ -48,6 +48,7 @@ else
   "ollama") INSTALLER_FILE="$OMAKUB_PATH/install/terminal/optional/app-ollama.sh" ;;
   "tailscale") INSTALLER_FILE="$OMAKUB_PATH/install/terminal/optional/app-tailscale.sh" ;;
   "openvpn") INSTALLER_FILE="$OMAKUB_PATH/install/terminal/optional/app-openvpn.sh" ;;
+  "oxidise") INSTALLER_FILE="$OMAKUB_PATH/install/terminal/optional/app-oxidise.sh" ;;
   "geekbench") INSTALLER_FILE="$OMAKUB_PATH/install/terminal/optional/app-geekbench.sh" ;;
   *) INSTALLER_FILE="$OMAKUB_PATH/install/desktop/optional/app-$INSTALLER.sh" ;;
   esac
