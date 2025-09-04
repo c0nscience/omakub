@@ -46,3 +46,4 @@ vc() {
 alias gcm='git commit -m'
 alias gcam='git commit -a -m'
 alias hogcad='git commit -a --amend'
+alias gst='git status -sb'
