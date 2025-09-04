@@ -29,9 +29,9 @@ alias vpn='openvpn3'
 alias vl='vpn sessions-list'
 alias vd='vpn session-manage -D -c dilax'
 
-vpnConfigure() {
+vpn-config() {
     op document get vpn-config --vault DILAX --out-file dilax.ovpn
-    vpn config-import --config dilax.ovpn --name dilax
+    vpn config-import --config dilax.ovpn --name dilax -p --tag dilax
     rm dilax.ovpn
   }
 
