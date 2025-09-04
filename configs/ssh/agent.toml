@@ -1,0 +1,7 @@
+[[ssh-keys]]
+item = "GitHub"
+vault = "Private"
+
+[[ssh-keys]]
+item = "Dilax"
+vault = "DILAX"
