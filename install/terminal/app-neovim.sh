@@ -41,6 +41,7 @@ if [ ! -d "$HOME/.config/nvim" ]; then
 
   rm -rf ~/.config/nvim/lua/plugins/example.lua
   cp ~/.local/share/omakub/configs/neovim/better-escape.lua ~/.config/nvim/lua/plugins/
+  cp ~/.local/share/omakub/configs/neovim/neo-tree.lua ~/.config/nvim/lua/plugins/
 fi
 
 # Replace desktop launcher with one running inside Alacritty
