@@ -4,6 +4,8 @@ CHOICES=(
   "Dev Editor        Install alternative programming editors"
   "Dev Language      Install programming language environment"
   "Dev Database      Install development database in Docker"
+  "Openvpn           Install openvpn3"
+  "Oxidise           Install useful rust apps"
   "Audacity          Record and edit audio"
   "ASDControl        Set brightness on Apple Studio and XDR displays"
   "Dropbox           Sync files across computers with ease"
