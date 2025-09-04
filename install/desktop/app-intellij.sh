@@ -1,3 +1,3 @@
 #!/bin/bash
 
-flatpak install flathub com.jetbrains.IntelliJ-IDEA-Ultimate
+flatpak install -y flathub com.jetbrains.IntelliJ-IDEA-Ultimate
