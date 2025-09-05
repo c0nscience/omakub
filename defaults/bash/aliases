@@ -18,7 +18,7 @@ alias ....='cd ../../..'
 n() { if [ "$#" -eq 0 ]; then nvim .; else nvim "$@"; fi; }
 alias g='git'
 alias d='docker'
-alias cat='batcat'
+alias cat='bat'
 alias grep='rg'
 alias lzg='lazygit'
 alias lzd='lazydocker'
