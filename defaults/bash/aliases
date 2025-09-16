@@ -1,3 +1,5 @@
+alias cat='bat'
+
 # File system
 alias ls='eza -lh --group-directories-first --icons=auto'
 alias l='ls'
@@ -5,8 +7,7 @@ alias ll='ls -al'
 alias la='ls -a'
 alias lt='eza --tree --level=2 --long --icons --git'
 alias lta='lt -a'
-alias ff="fzf --preview 'batcat --style=numbers --color=always {}'"
-alias fd='fdfind'
+alias ff="fzf --preview 'bat --style=numbers --color=always {}'"
 alias cd='z'
 
 # Directories
@@ -14,11 +15,18 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 
+# Mise
+alias ms8='mise shell java@zulu-8'
+alias ms17='mise shell java@zulu-17'
+alias ms24='mise shell java@zulu-24'
+alias mu8='mise use java@zulu-8'
+alias mu17='mise use java@zulu-17'
+alias mu24='mise use java@zulu-24'
+
 # Tools
 n() { if [ "$#" -eq 0 ]; then nvim .; else nvim "$@"; fi; }
 alias g='git'
 alias d='docker'
-alias cat='bat'
 alias grep='rg'
 alias lzg='lazygit'
 alias lzd='lazydocker'

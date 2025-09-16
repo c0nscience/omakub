@@ -40,7 +40,8 @@ if [[ -n "$languages" ]]; then
       bash -c "$(curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs)" -- -y
       ;;
     Java)
-      mise use --global java@latest
+      mise install java@zulu-24 java@zulu-17 java@zulu-8 maven@3
+      mise use --global java@zulu-17 maven@3
       ;;
     esac
   done
