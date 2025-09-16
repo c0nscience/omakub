@@ -6,6 +6,7 @@ return {
 		opts = {
 			filesystem = {
 				group_empty_dirs = true,
+				scan_mode = "deep",
 			},
 		},
 	},
