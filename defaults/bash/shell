@@ -9,6 +9,7 @@ source /usr/share/bash-completion/bash_completion
 
 # Set complete path
 export PATH="./bin:$HOME/.local/bin:$HOME/.local/share/omakub/bin:$PATH"
+export PATH="$HOME/Documents/workspace/developer-tools/anti-git-flow-scripts/:$PATH"
 set +h
 
 export OMAKUB_PATH="$HOME/.local/share/omakub"
