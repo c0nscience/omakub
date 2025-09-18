@@ -5,4 +5,4 @@ curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-
 
 # install rust tools
 cargo binstall -y -q xh ripgrep bat eza zoxide fd-find
-cargo install -y --locked ncspot
+cargo install -y --locked ncspot tree-sitter-cli
