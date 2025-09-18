@@ -4,7 +4,7 @@
 if [[ -v OMAKUB_FIRST_RUN_DBS ]]; then
   dbs=$OMAKUB_FIRST_RUN_DBS
 else
-  AVAILABLE_DBS=("MySQL" "Redis" "PostgreSQL")
+  AVAILABLE_DBS=("MySQL" "Redis" "PostgreSQL" "Mail")
   dbs=$(gum choose "${AVAILABLE_DBS[@]}" --no-limit --height 5 --header "Select databases (runs in Docker)")
 fi
 
@@ -19,6 +19,9 @@ if [[ -n "$dbs" ]]; then
       ;;
     PostgreSQL)
       sudo docker run -d --restart unless-stopped -p "5432:5432" --name=postgres -e POSTGRES_HOST_AUTH_METHOD=trust postgres:17
+      ;;
+    Mail)
+      sudo docker run -d --restart unless-stopped -p "5000:80" -p "2525:25" --name=mail rnwood/smtp4dev
       ;;
     esac
   done
