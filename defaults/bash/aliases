@@ -31,6 +31,8 @@ alias grep='rg'
 alias lzg='lazygit'
 alias lzd='lazydocker'
 alias http='xh'
+alias k='kubectl'
+complete -o default -F __start_kubectl k
 
 # OpenVPN
 alias vpn='openvpn3'
