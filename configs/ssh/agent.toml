@@ -5,3 +5,7 @@ vault = "Private"
 [[ssh-keys]]
 item = "Dilax"
 vault = "DILAX"
+
+[[ssh-keys]]
+item = "Server"
+vault = "DILAX"
