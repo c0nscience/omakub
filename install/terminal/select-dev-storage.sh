@@ -19,7 +19,8 @@ if [[ -n "$dbs" ]]; then
       sudo docker run -d --network local --restart unless-stopped -p "6379:6379" --name=redis redis:8
       ;;
     PostgreSQL)
-      sudo docker run -d --network local --restart unless-stopped -p "5432:5432" --name=postgres17 -e POSTGRES_HOST_AUTH_METHOD=trust postgres:17
+      mkdir -p $HOME/Documents/dwmp-dbs/backup
+      sudo docker run -d --network local --restart unless-stopped -p "5432:5432" --name=postgres17 -v $HOME/Documents/dwmp-dbs/backup:/backup -e POSTGRES_HOST_AUTH_METHOD=trust postgres:17
       ;;
     Mail)
       sudo docker run -d --network local --restart unless-stopped -p "5000:80" -p "2525:25" --name=mail rnwood/smtp4dev
