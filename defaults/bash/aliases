@@ -18,9 +18,11 @@ alias ....='cd ../../..'
 # Mise
 alias ms8='mise shell java@zulu-8'
 alias ms17='mise shell java@zulu-17'
+alias ms21='mise shell java@zulu-21'
 alias ms24='mise shell java@zulu-24'
 alias mu8='mise use java@zulu-8'
 alias mu17='mise use java@zulu-17'
+alias mu21='mise use java@zulu-21'
 alias mu24='mise use java@zulu-24'
 
 # Tools
