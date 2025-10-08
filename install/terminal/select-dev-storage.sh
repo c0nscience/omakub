@@ -4,7 +4,7 @@
 if [[ -v OMAKUB_FIRST_RUN_DBS ]]; then
   dbs=$OMAKUB_FIRST_RUN_DBS
 else
-  AVAILABLE_DBS=("MySQL" "Redis" "PostgreSQL" "Mail")
+  AVAILABLE_DBS=("MySQL" "Redis" "PostgreSQL")
   dbs=$(gum choose "${AVAILABLE_DBS[@]}" --no-limit --height 5 --header "Select databases (runs in Docker)")
 fi
 
@@ -21,9 +21,6 @@ if [[ -n "$dbs" ]]; then
     PostgreSQL)
       mkdir -p $HOME/Documents/dwmp-dbs/backup
       sudo docker run -d --network local --restart unless-stopped -p "5432:5432" --name=postgres17 -v $HOME/Documents/dwmp-dbs/backup:/backup -e POSTGRES_HOST_AUTH_METHOD=trust postgres:17
-      ;;
-    Mail)
-      sudo docker run -d --network local --restart unless-stopped -p "5000:80" -p "2525:25" --name=mail rnwood/smtp4dev
       ;;
     esac
   done
