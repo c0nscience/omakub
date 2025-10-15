@@ -54,6 +54,12 @@ vc() {
     printf "$USER\n$PW$OTP\n" | vpn session-start --config dilax
   }
 
+copySSH() {
+    op item get 'Server' --fields 'public key' --vault DILAX >> key.pub
+    ssh-copy-id -f -i ./key.pub berlin\\$1@$2.dilax.com
+    rm key.pub
+  }
+
 # Git
 alias gcm='git commit -m'
 alias gcam='git commit -a -m'
