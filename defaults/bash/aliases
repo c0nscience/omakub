@@ -88,6 +88,22 @@ copySSH() {
     clean_up
   }
 
+j() {
+    server_name=$(tail -n +2 $HOME/.config/omakub/data/machines.csv | cut -d "," -f 1 | gum filter --fuzzy --fuzzy-sort)
+    server_host=$(cat $HOME/.config/omakub/data/machines.csv | grep $server_name | cut -d "," -f 2)
+    
+    if [ -z "$server_host" ]; then
+      echo "No server selected. ending ..."
+      clean_up
+      return
+    fi
+    
+    user=$(gum choose --select-if-one < $HOME/.config/omakub/data/user)
+    domain=$(gum choose --select-if-one < $HOME/.config/omakub/data/domain)
+
+    ssh "$domain\\$user@$server_host"
+  }
+
 # Git
 alias gcm='git commit -m'
 alias gcam='git commit -a -m'
