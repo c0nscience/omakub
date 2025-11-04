@@ -3,6 +3,10 @@ item = "GitHub"
 vault = "Private"
 
 [[ssh-keys]]
+item = "brPI"
+vault = "Private"
+
+[[ssh-keys]]
 item = "Dilax"
 vault = "DILAX"
 
