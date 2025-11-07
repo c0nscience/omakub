@@ -54,56 +54,6 @@ vc() {
     printf "$USER\n$PW$OTP\n" | vpn session-start --config dilax
   }
 
-copySSH() {
-    clean_up() {
-      echo "cleaning up ..."
-      rm -f key.pub
-    }
-    
-    key=$(gum spin --show-output --title="Fetching keys ..." -- op item ls --categories "SSH Key" --tags server --format json | \
-    jq -r '.[] | .title' | \
-    gum choose --ordered --select-if-one)
-
-    if [ -z "$key" ]; then
-      echo "No key selected. ending ..."
-      clean_up
-      return
-    fi
-    
-    gum spin --show-output --title="Copy key $key ..." -- op item get 'Server' --fields 'public key' >> key.pub
-
-    server_name=$(tail -n +2 $HOME/.config/omakub/data/machines.csv | cut -d "," -f 1 | gum filter --fuzzy --fuzzy-sort)
-    server_host=$(cat $HOME/.config/omakub/data/machines.csv | grep $server_name | cut -d "," -f 2)
-
-    if [ -z "$server_host" ]; then
-      echo "No server selected. ending ..."
-      clean_up
-      return
-    fi
-
-    user=$(gum choose --select-if-one < $HOME/.config/omakub/data/user)
-    domain=$(gum choose --select-if-one < $HOME/.config/omakub/data/domain)
-
-    ssh-copy-id -f -i ./key.pub "$domain\\$user@$server_host"
-    clean_up
-  }
-
-j() {
-    server_name=$(tail -n +2 $HOME/.config/omakub/data/machines.csv | cut -d "," -f 1 | gum filter --fuzzy --fuzzy-sort)
-    server_host=$(cat $HOME/.config/omakub/data/machines.csv | grep $server_name | cut -d "," -f 2)
-    
-    if [ -z "$server_host" ]; then
-      echo "No server selected. ending ..."
-      clean_up
-      return
-    fi
-    
-    user=$(gum choose --select-if-one < $HOME/.config/omakub/data/user)
-    domain=$(gum choose --select-if-one < $HOME/.config/omakub/data/domain)
-
-    ssh "$domain\\$user@$server_host"
-  }
-
 # Git
 alias gcm='git commit -m'
 alias gcam='git commit -a -m'
