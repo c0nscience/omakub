@@ -13,3 +13,7 @@ vault = "DILAX"
 [[ssh-keys]]
 item = "Server"
 vault = "DILAX"
+
+[[ssh-keys]]
+item = "Codeberg"
+vault = "Private"
