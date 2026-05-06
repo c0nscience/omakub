@@ -135,3 +135,11 @@ alias fix_fkeys='echo 2 | sudo tee /sys/module/hid_apple/parameters/fnmode'
 
 # Spotify window is too large on many displays, so fix this by zooming it down
 alias fix_spotify_window_size="sudo sed -i 's|^Exec=.*|Exec=spotify --force-device-scale-factor=1.5 %U|' /usr/local/share/applications/spotify.desktop"
+
+function y() {
+	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+	command yazi "$@" --cwd-file="$tmp"
+	IFS= read -r -d '' cwd < "$tmp"
+	[ "$cwd" != "$PWD" ] && [ -d "$cwd" ] && builtin cd -- "$cwd"
+	rm -f -- "$tmp"
+}
