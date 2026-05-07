@@ -16,9 +16,9 @@
     "lazyvim.plugins.extras.lang.toml",
     "lazyvim.plugins.extras.lang.yaml"
   ],
-  "install_version": 8,
+  "install_version": 15,
   "news": {
     "NEWS.md": "10960"
   },
-  "version": 8
+  "version": 15
 }
