@@ -10,11 +10,11 @@ return {
           runtimes = {
             {
               name = "JavaSE-17",
-              path = vim.fn.expand("~/.local/share/mise/installs/java/zulu-17/bin/java"),
+              path = vim.fn.expand("~/.local/share/mise/installs/java/zulu-17"),
             },
             {
               name = "JavaSE-21",
-              path = vim.fn.expand("~/.local/share/mise/installs/java/zulu-21/bin/java"),
+              path = vim.fn.expand("~/.local/share/mise/installs/java/zulu-21"),
             },
           },
         },
