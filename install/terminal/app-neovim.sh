@@ -47,6 +47,7 @@ if [ ! -d "$HOME/.config/nvim" ]; then
   cp ~/.local/share/omakub/configs/neovim/puppet.lua ~/.config/nvim/lua/plugins/
   cp ~/.local/share/omakub/configs/neovim/java.lua ~/.config/nvim/lua/plugins/
   cp ~/.local/share/omakub/configs/neovim/kotlin.lua ~/.config/nvim/lua/plugins/
+  cp ~/.local/share/omakub/configs/neovim/csvview.lua ~/.config/nvim/lua/plugins/
 fi
 
 # Replace desktop launcher with one running inside Alacritty
