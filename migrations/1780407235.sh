@@ -1,20 +1,27 @@
 #!/bin/bash
 
-cd /tmp
-wget -O zellij.tar.gz "https://github.com/zellij-org/zellij/releases/latest/download/zellij-x86_64-unknown-linux-musl.tar.gz"
-tar -xf zellij.tar.gz zellij
-sudo install zellij /usr/local/bin
-rm zellij.tar.gz zellij
-cd -
+# Install the zellij-attention plugin and wire it into existing zellij + Claude Code configs
+# so Claude Code state shows up in the zellij tab name.
 
-mkdir -p ~/.config/zellij/themes
-[ ! -f "$HOME/.config/zellij/config.kdl" ] && cp ~/.local/share/omakub/configs/zellij.kdl ~/.config/zellij/config.kdl
-cp ~/.local/share/omakub/themes/tokyo-night/zellij.kdl ~/.config/zellij/themes/tokyo-night.kdl
+if command -v zellij &>/dev/null; then
+  mkdir -p ~/.config/zellij/plugins
+  curl -L https://github.com/KiryuuLight/zellij-attention/releases/latest/download/zellij-attention.wasm \
+    -o ~/.config/zellij/plugins/zellij-attention.wasm
 
-# Headless plugin that reflects Claude Code state in the tab name (driven by Claude Code hooks)
-mkdir -p ~/.config/zellij/plugins
-curl -L https://github.com/KiryuuLight/zellij-attention/releases/latest/download/zellij-attention.wasm \
-  -o ~/.config/zellij/plugins/zellij-attention.wasm
+  if [ -f ~/.config/zellij/config.kdl ] && ! grep -q "zellij-attention" ~/.config/zellij/config.kdl; then
+    cat >>~/.config/zellij/config.kdl <<'KDL'
+
+// Reflect Claude Code state in the tab name (driven by Claude Code hooks via `zellij pipe`)
+load_plugins {
+    "file:~/.config/zellij/plugins/zellij-attention.wasm" {
+        enabled "true"
+        waiting_icon "⏳"
+        completed_icon "✅"
+    }
+}
+KDL
+  fi
+fi
 
 # Register Claude Code hooks to drive the plugin (only if Claude Code is configured)
 if [ -f "$HOME/.claude/settings.json" ] && command -v jq &>/dev/null; then
