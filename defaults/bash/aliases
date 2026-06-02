@@ -38,14 +38,14 @@ complete -o default -F __start_kubectl k
 
 # OpenVPN
 alias vpn='openvpn3'
-alias vl='gum spin --show-output --title "Listing VPN sessions..." -- vpn sessions-list'
-alias vd='gum spin --show-output --title "Disconnecting VPN session (dilax)..." -- vpn session-manage -D -c dilax'
+alias vl='gum spin --show-output --title "Listing VPN sessions..." -- openvpn3 sessions-list'
+alias vd='gum spin --show-output --title "Disconnecting VPN session (dilax)..." -- openvpn3 session-manage -D -c dilax'
 
 vpn-config() {
     gum spin --title "Fetching VPN config from 1Password..." -- \
       op document get vpn-config --vault DILAX --out-file dilax.ovpn
     gum spin --show-output --title "Importing VPN config..." -- \
-      vpn config-import --config dilax.ovpn --name dilax -p --tag dilax
+      openvpn3 config-import --config dilax.ovpn --name dilax -p --tag dilax
     rm dilax.ovpn
   }
 
@@ -58,7 +58,7 @@ vc() {
     otp=$(gum spin --show-output --title "Generating OTP..." -- \
       op item get VPN --vault DILAX --otp)
     printf "$user\n$pw$otp\n" | gum spin --show-output --title "Starting VPN session..." -- \
-      vpn session-start --config dilax
+      openvpn3 session-start --config dilax
   }
 
 # Git
