@@ -38,20 +38,27 @@ complete -o default -F __start_kubectl k
 
 # OpenVPN
 alias vpn='openvpn3'
-alias vl='vpn sessions-list'
-alias vd='vpn session-manage -D -c dilax'
+alias vl='gum spin --show-output --title "Listing VPN sessions..." -- vpn sessions-list'
+alias vd='gum spin --show-output --title "Disconnecting VPN session (dilax)..." -- vpn session-manage -D -c dilax'
 
 vpn-config() {
-    op document get vpn-config --vault DILAX --out-file dilax.ovpn
-    vpn config-import --config dilax.ovpn --name dilax -p --tag dilax
+    gum spin --title "Fetching VPN config from 1Password..." -- \
+      op document get vpn-config --vault DILAX --out-file dilax.ovpn
+    gum spin --show-output --title "Importing VPN config..." -- \
+      vpn config-import --config dilax.ovpn --name dilax -p --tag dilax
     rm dilax.ovpn
   }
 
 vc() {
-    USER=$(op item get 'AD Account' --fields username --vault DILAX)
-    PW=$(op item get 'AD Account' --fields password --vault DILAX --reveal)
-    OTP=$(op item get VPN --vault DILAX --otp)
-    printf "$USER\n$PW$OTP\n" | vpn session-start --config dilax
+    local user pw otp
+    user=$(gum spin --show-output --title "Fetching username from 1Password..." -- \
+      op item get 'AD Account' --fields username --vault DILAX)
+    pw=$(gum spin --show-output --title "Fetching password from 1Password..." -- \
+      op item get 'AD Account' --fields password --vault DILAX --reveal)
+    otp=$(gum spin --show-output --title "Generating OTP..." -- \
+      op item get VPN --vault DILAX --otp)
+    printf "$user\n$pw$otp\n" | gum spin --show-output --title "Starting VPN session..." -- \
+      vpn session-start --config dilax
   }
 
 # Git
