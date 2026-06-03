@@ -16,18 +16,26 @@ mkdir -p ~/.config/zellij/plugins
 curl -L https://github.com/KiryuuLight/zellij-attention/releases/latest/download/zellij-attention.wasm \
   -o ~/.config/zellij/plugins/zellij-attention.wasm
 
+# notify-send (libnotify-bin) backs the desktop-notification hooks below
+sudo apt install -y libnotify-bin
+
 # Register Claude Code hooks to drive the plugin (only if Claude Code is configured)
 if [ -f "$HOME/.claude/settings.json" ] && command -v jq &>/dev/null; then
   if ! jq -e '.hooks.Stop' "$HOME/.claude/settings.json" &>/dev/null; then
     pipe='[ -n "$ZELLIJ" ] && zellij pipe --name "zellij-attention::%s::$ZELLIJ_PANE_ID" || true'
     waiting=$(printf "$pipe" waiting)
     completed=$(printf "$pipe" completed)
+    notify_attention='msg=$(jq -r ".message // \"needs your attention\""); notify-send -a "Claude Code" -u normal "Claude Code" "$msg" || true'
+    notify_done='notify-send -a "Claude Code" -u low "Claude Code" "Finished responding" || true'
     tmp=$(mktemp)
-    jq --arg waiting "$waiting" --arg completed "$completed" '
+    jq --arg waiting "$waiting" --arg completed "$completed" \
+       --arg notify_attention "$notify_attention" --arg notify_done "$notify_done" '
       .hooks += {
         UserPromptSubmit: [{ hooks: [{ type: "command", command: $waiting }] }],
-        Notification:     [{ matcher: "", hooks: [{ type: "command", command: $waiting }] }],
-        Stop:             [{ hooks: [{ type: "command", command: $completed }] }]
+        Notification:     [{ matcher: "", hooks: [{ type: "command", command: $waiting },
+                                                  { type: "command", command: $notify_attention }] }],
+        Stop:             [{ hooks: [{ type: "command", command: $completed },
+                                     { type: "command", command: $notify_done }] }]
       }' "$HOME/.claude/settings.json" >"$tmp" && mv "$tmp" "$HOME/.claude/settings.json"
   fi
 fi
