@@ -25,13 +25,19 @@ if [ -f "$HOME/.claude/settings.json" ] && command -v jq &>/dev/null; then
     pipe='[ -n "$ZELLIJ" ] && zellij pipe --name "zellij-attention::%s::$ZELLIJ_PANE_ID" || true'
     waiting=$(printf "$pipe" waiting)
     completed=$(printf "$pipe" completed)
-    notify_attention='msg=$(jq -r ".message // \"needs your attention\""); notify-send -a "Claude Code" -u normal "Claude Code" "$msg" || true'
-    notify_done='notify-send -a "Claude Code" -u low "Claude Code" "Finished responding" || true'
+    # At prompt-submit the Claude pane is focused, so record its tab name per pane;
+    # the notify-send hooks read it back to show which tab needs you (you may have
+    # switched away by the time the notification fires).
+    capture='[ -n "$ZELLIJ" ] && zellij action dump-layout 2>/dev/null | grep -E "^[[:space:]]*tab name=.*focus=true" | head -1 | grep -oP "name=\"\K[^\"]+" >"${XDG_RUNTIME_DIR:-/tmp}/claude-zellij-tab-${ZELLIJ_SESSION_NAME:-x}-${ZELLIJ_PANE_ID:-x}" 2>/dev/null || true'
+    tab='$(cat "${XDG_RUNTIME_DIR:-/tmp}/claude-zellij-tab-${ZELLIJ_SESSION_NAME:-x}-${ZELLIJ_PANE_ID:-x}" 2>/dev/null)'
+    notify_attention='tab='"$tab"'; msg=$(jq -r ".message // \"needs your attention\""); notify-send -a "Claude Code" -u normal "Claude Code${tab:+ · $tab}" "$msg" || true'
+    notify_done='tab='"$tab"'; notify-send -a "Claude Code" -u low "Claude Code${tab:+ · $tab}" "Finished responding" || true'
     tmp=$(mktemp)
-    jq --arg waiting "$waiting" --arg completed "$completed" \
+    jq --arg waiting "$waiting" --arg completed "$completed" --arg capture "$capture" \
        --arg notify_attention "$notify_attention" --arg notify_done "$notify_done" '
       .hooks += {
-        UserPromptSubmit: [{ hooks: [{ type: "command", command: $waiting }] }],
+        UserPromptSubmit: [{ hooks: [{ type: "command", command: $waiting },
+                                     { type: "command", command: $capture }] }],
         Notification:     [{ matcher: "", hooks: [{ type: "command", command: $waiting },
                                                   { type: "command", command: $notify_attention }] }],
         Stop:             [{ hooks: [{ type: "command", command: $completed },
