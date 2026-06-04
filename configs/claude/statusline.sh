@@ -3,6 +3,7 @@ export LC_NUMERIC=C
 input=$(cat)
 
 MODEL=$(echo "$input" | jq -r '.model.display_name // "?"')
+EFFORT=$(echo "$input" | jq -r '.effort.level // empty')
 STYLE=$(echo "$input" | jq -r '.output_style.name // empty')
 VERSION=$(echo "$input" | jq -r '.version // empty')
 COST=$(echo "$input" | jq -r '.cost.total_cost_usd // 0')
@@ -33,7 +34,7 @@ elif [ "$M" -gt 0 ]; then DUR="${M}m ${S}s"
 else                      DUR="${S}s"
 fi
 
-out="[$MODEL]"
+out="[$MODEL${EFFORT:+ · $EFFORT}]"
 [ -n "$STYLE" ] && [ "$STYLE" != "default" ] && out="$out 🎨 $STYLE"
 [ -n "$BRANCH" ] && out="$out  $BRANCH"
 out="$out | 🧠 $(fmt $REMAIN) left (${PCT}% used)"
