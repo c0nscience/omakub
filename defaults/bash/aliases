@@ -67,3 +67,6 @@ alias gcam='git commit -a -m'
 alias hogcad='git commit -a --amend'
 alias gst='git status -sb'
 alias gpr='git config user.email "ber.bherzig@pm.me"'
+
+# Claude Code — inject the Aikido API key from 1Password at launch (op run; key never on disk)
+alias claude='op run --env-file=$HOME/.config/op/aikido.env --no-masking -- claude'
