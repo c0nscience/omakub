@@ -41,10 +41,11 @@ prefer the `update-config` skill over editing them blind.
 
 ## statusline-command.sh
 
-Reads the session JSON from stdin and prints: cwd, model name, remaining context tokens
-(computed as `context_window_size - total_input_tokens`), used/total tokens, and total
-cost. Requires `jq` and `awk`. If you change the displayed fields, keep it a single fast
-`printf` — the status line runs on every render.
+Reads the session JSON from stdin and prints, pipe-separated: model name + thinking level,
+output style (when non-default), git branch (when in a repo), context-token usage as
+`used/total` (e.g. `45k/200k`), lines added/removed, session duration, total cost, and the
+current directory name. Requires `jq` and `awk`. If you change the displayed fields, keep it
+a single fast `printf` — the status line runs on every render.
 
 ## State directories (do not hand-edit)
 
