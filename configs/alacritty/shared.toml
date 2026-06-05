@@ -2,7 +2,8 @@
 TERM = "xterm-256color"
 
 [shell]
-program = "zellij"
+program = "sh"
+args = ["-c", "ulimit -Sn 1048576; exec zellij"]
 
 [window]
 padding.x = 16
