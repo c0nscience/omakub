@@ -43,12 +43,9 @@ prefer the `update-config` skill over editing them blind.
 
 Reads the session JSON from stdin and prints, pipe-separated: model name + thinking level,
 output style (when non-default), git branch (when in a repo), context-token usage as
-`used/total` + percent (e.g. `45k/200k 23%`), lines added/removed, session duration plus the
-5-hour usage session's remaining/reset-clock/used-% (from `rate_limits.five_hour`,
-subscription plans only), total cost, and the current directory name. The context value and
-the session used-% turn orange at ≥60% full and red at ≥80% (256-color ANSI). Requires `jq`
-and `awk`. If you change the displayed fields, keep it a single fast `printf` — the status
-line runs on every render.
+`used/total` (e.g. `45k/200k`), lines added/removed, session duration, total cost, and the
+current directory name. Requires `jq` and `awk`. If you change the displayed fields, keep it
+a single fast `printf` — the status line runs on every render.
 
 ## State directories (do not hand-edit)
 
