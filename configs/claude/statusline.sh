@@ -14,6 +14,14 @@ SIZE=$(echo "$input" | jq -r '.context_window.context_window_size // 200000')
 DIR=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // empty')
 
 fmt() { awk -v n="$1" 'BEGIN{printf (n>=1000)?"%.0fk":"%d", (n>=1000)?n/1000:n}'; }
+# color text by fullness: orange >=60%, red >=80%, else plain
+clr() {
+  if   [ "$1" -ge 80 ]; then printf '\033[38;5;196m%s\033[0m' "$2"
+  elif [ "$1" -ge 60 ]; then printf '\033[38;5;208m%s\033[0m' "$2"
+  else                       printf '%s' "$2"
+  fi
+}
+CTXPCT=$(awk -v u="$USED" -v s="$SIZE" 'BEGIN{printf "%.0f", (s>0)?100*u/s:0}')
 
 # git branch (resolved from the working dir; silent if not a repo)
 BRANCH=""
@@ -31,12 +39,24 @@ elif [ "$M" -gt 0 ]; then DUR="${M}m ${S}s"
 else                      DUR="${S}s"
 fi
 
+# 5-hour usage session: remaining + reset clock + used% (subscription plans only)
+NOW=$(date +%s)
+RESET5=$(echo "$input" | jq -r '.rate_limits.five_hour.resets_at // empty')
+S5PCT=$(echo "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty')
+SESS=""
+if [[ "$RESET5" =~ ^[0-9]+$ ]] && [ "$RESET5" -gt "$NOW" ]; then
+  REM=$((RESET5 - NOW)); RH=$((REM / 3600)); RM=$(((REM % 3600) / 60))
+  [ "$RH" -gt 0 ] && LEFT="${RH}h ${RM}m" || LEFT="${RM}m"
+  SESS="⏳$LEFT ↻ $(date -d @"$RESET5" +%H:%M)"
+  [[ "$S5PCT" =~ ^[0-9]+$ ]] && SESS="$SESS $(clr "$S5PCT" "${S5PCT}%")"
+fi
+
 out="$MODEL${EFFORT:+ · $EFFORT}"
 [ -n "$STYLE" ] && [ "$STYLE" != "default" ] && out="$out 🎨 $STYLE"
 [ -n "$BRANCH" ] && out="$out  $BRANCH"
-out="$out | 🧠 $(fmt $USED)/$(fmt $SIZE)"
+out="$out | 🧠 $(clr "$CTXPCT" "$(fmt $USED)/$(fmt $SIZE) ${CTXPCT}%")"
 out="$out | 📝 +${ADDED}/-${REMOVED}"
-out="$out | ⏱ $DUR"
+out="$out | ⏱ $DUR${SESS:+ - $SESS}"
 out="$out | 💰 \$$(printf '%.2f' "$COST")"
 [ -n "$DIR" ] && out="$out | 📁 $(basename "$DIR")"
 
