@@ -2,6 +2,10 @@ theme "tokyo-night"
 default_layout "compact"
 on_force_close "quit"
 
+// Disabled to stop periodic CPU/disk spikes from session serialization (0.44.x);
+// trade-off: no session resurrection after reboot / kill-session.
+session_serialization false
+
 default_mode "locked"
 keybinds clear-defaults=true {
     locked {
