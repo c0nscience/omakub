@@ -129,6 +129,7 @@ keybinds clear-defaults=true {
             LaunchOrFocusPlugin "session-manager" {
                 floating true
                 move_to_focused_tab true
+                multi_screen true
             }
             SwitchToMode "locked"
         }
