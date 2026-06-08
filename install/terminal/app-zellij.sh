@@ -11,20 +11,12 @@ mkdir -p ~/.config/zellij/themes
 [ ! -f "$HOME/.config/zellij/config.kdl" ] && cp ~/.local/share/omakub/configs/zellij.kdl ~/.config/zellij/config.kdl
 cp ~/.local/share/omakub/themes/tokyo-night/zellij.kdl ~/.config/zellij/themes/tokyo-night.kdl
 
-# Headless plugin that reflects Claude Code state in the tab name (driven by Claude Code hooks)
-mkdir -p ~/.config/zellij/plugins
-curl -L https://github.com/KiryuuLight/zellij-attention/releases/latest/download/zellij-attention.wasm \
-  -o ~/.config/zellij/plugins/zellij-attention.wasm
-
 # notify-send (libnotify-bin) backs the desktop-notification hooks below
 sudo apt install -y libnotify-bin
 
-# Register Claude Code hooks to drive the plugin (only if Claude Code is configured)
+# Register Claude Code desktop-notification hooks (only if Claude Code is configured)
 if [ -f "$HOME/.claude/settings.json" ] && command -v jq &>/dev/null; then
   if ! jq -e '.hooks.Stop' "$HOME/.claude/settings.json" &>/dev/null; then
-    pipe='[ -n "$ZELLIJ" ] && zellij pipe --name "zellij-attention::%s::$ZELLIJ_PANE_ID" || true'
-    waiting=$(printf "$pipe" waiting)
-    completed=$(printf "$pipe" completed)
     # At prompt-submit the Claude pane is focused, so record its tab name per pane;
     # the notify-send hooks read it back to show which tab needs you (you may have
     # switched away by the time the notification fires).
@@ -33,15 +25,12 @@ if [ -f "$HOME/.claude/settings.json" ] && command -v jq &>/dev/null; then
     notify_attention='tab='"$tab"'; msg=$(jq -r ".message // \"needs your attention\""); notify-send -a "Claude Code" -u normal "Claude Code${tab:+ · $tab}" "$msg" || true'
     notify_done='tab='"$tab"'; notify-send -a "Claude Code" -u low "Claude Code${tab:+ · $tab}" "Finished responding" || true'
     tmp=$(mktemp)
-    jq --arg waiting "$waiting" --arg completed "$completed" --arg capture "$capture" \
+    jq --arg capture "$capture" \
        --arg notify_attention "$notify_attention" --arg notify_done "$notify_done" '
       .hooks += {
-        UserPromptSubmit: [{ hooks: [{ type: "command", command: $waiting },
-                                     { type: "command", command: $capture }] }],
-        Notification:     [{ matcher: "", hooks: [{ type: "command", command: $waiting },
-                                                  { type: "command", command: $notify_attention }] }],
-        Stop:             [{ hooks: [{ type: "command", command: $completed },
-                                     { type: "command", command: $notify_done }] }]
+        UserPromptSubmit: [{ hooks: [{ type: "command", command: $capture }] }],
+        Notification:     [{ matcher: "", hooks: [{ type: "command", command: $notify_attention }] }],
+        Stop:             [{ hooks: [{ type: "command", command: $notify_done }] }]
       }' "$HOME/.claude/settings.json" >"$tmp" && mv "$tmp" "$HOME/.claude/settings.json"
   fi
 fi
