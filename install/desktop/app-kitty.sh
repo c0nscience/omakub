@@ -24,23 +24,4 @@ cp ~/.local/share/omakub/themes/tokyo-night/kitty.conf ~/.config/kitty/theme.con
 cp ~/.local/share/omakub/configs/kitty/fonts/CaskaydiaMono.conf ~/.config/kitty/font.conf
 cp ~/.local/share/omakub/configs/kitty/font-size.conf ~/.config/kitty/font-size.conf
 
-# notify-send (libnotify-bin) backs the desktop-notification hooks below
-sudo apt install -y libnotify-bin
-
-# Register Claude Code desktop-notification hooks (only if Claude Code is
-# configured). The zellij tab-name capture that used to label these
-# notifications went away with zellij; kitty has no cheap equivalent.
-if [ -f "$HOME/.claude/settings.json" ] && command -v jq &>/dev/null; then
-  if ! jq -e '.hooks.Stop' "$HOME/.claude/settings.json" &>/dev/null; then
-    notify_attention='msg=$(jq -r ".message // \"needs your attention\""); notify-send -a "Claude Code" -u normal "Claude Code" "$msg" || true'
-    notify_done='notify-send -a "Claude Code" -u low "Claude Code" "Finished responding" || true'
-    tmp=$(mktemp)
-    jq --arg notify_attention "$notify_attention" --arg notify_done "$notify_done" '
-      .hooks += {
-        Notification: [{ matcher: "", hooks: [{ type: "command", command: $notify_attention }] }],
-        Stop:         [{ hooks: [{ type: "command", command: $notify_done }] }]
-      }' "$HOME/.claude/settings.json" >"$tmp" && mv "$tmp" "$HOME/.claude/settings.json"
-  fi
-fi
-
 source ~/.local/share/omakub/install/desktop/set-kitty-default.sh
