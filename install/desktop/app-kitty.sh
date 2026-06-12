@@ -8,6 +8,16 @@ curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin launch=n
 mkdir -p ~/.local/bin
 ln -sf ~/.local/kitty.app/bin/kitty ~/.local/kitty.app/bin/kitten ~/.local/bin/
 
+# Ubuntu's fonts-noto-color-emoji is CBDT-bitmap-only, which kitty's font
+# scanner cannot see (symbol_map + emoji fallback silently fail). Install the
+# scalable COLRv1 build user-level; kitty >=0.40 renders COLRv1 natively.
+if [ ! -f ~/.local/share/fonts/Noto-COLRv1.ttf ]; then
+  mkdir -p ~/.local/share/fonts
+  curl -sL -o ~/.local/share/fonts/Noto-COLRv1.ttf \
+    https://raw.githubusercontent.com/googlefonts/noto-emoji/main/fonts/Noto-COLRv1.ttf
+  fc-cache -f ~/.local/share/fonts
+fi
+
 # Desktop entry pointing at the self-contained install
 mkdir -p ~/.local/share/applications
 cp ~/.local/kitty.app/share/applications/kitty.desktop ~/.local/share/applications/
