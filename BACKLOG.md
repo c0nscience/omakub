@@ -38,9 +38,9 @@ border width (doubled globally to 1pt instead).
 
 - Only everforest was visually trialed; the other 8 theme `kitty.conf` files are
   derived from their alacritty/upstream palettes — eyeball each on first switch.
-- Claude Code notification hooks lost the zellij tab-name label (capture relied on
-  `zellij action dump-layout`); a kitty equivalent needs `allow_remote_control` +
-  a socket — revisit if unlabeled notifications get annoying.
+- Claude Code notify-send hook registration was dropped from omakub entirely
+  (went away with `app-zellij.sh`); hooks already registered in
+  `~/.claude/settings.json` on existing machines are untouched.
 
 ### Rollback (now = uninstall)
 
