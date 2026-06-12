@@ -50,7 +50,7 @@ if [ ! -d "$HOME/.config/nvim" ]; then
   cp ~/.local/share/omakub/configs/neovim/csvview.lua ~/.config/nvim/lua/plugins/
 fi
 
-# Replace desktop launcher with one running inside Alacritty
+# Replace desktop launcher with one running inside Kitty
 if [[ -d ~/.local/share/applications ]]; then
   sudo rm -rf /usr/share/applications/nvim.desktop
   sudo rm -rf /usr/local/share/applications/nvim.desktop

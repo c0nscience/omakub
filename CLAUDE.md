@@ -43,15 +43,15 @@ This means:
 
 `THEME_NAMES` in `bin/omakub-sub/theme.sh` lists the selectable themes; each must have a matching directory under `themes/` (lowercased, spaces → hyphens, e.g. "Tokyo Night" → `tokyo-night/`). A theme directory contains one file per themed app:
 
-`alacritty.toml`, `zellij.kdl`, `neovim.lua`, `btop.theme` (optional), `background.jpg`, plus `gnome.sh`, `tophat.sh`, `vscode.sh` (each a script that applies that app's theming).
+`kitty.conf`, `neovim.lua`, `btop.theme` (optional), `background.jpg`, plus `gnome.sh`, `tophat.sh`, `vscode.sh` (each a script that applies that app's theming).
 
 `theme.sh` copies these into the right `~/.config` locations and `sed`-patches config files to point at the new theme. **Adding a theme means adding its name to `THEME_NAMES` and creating a complete directory** — a missing file (other than the optional `btop.theme`) will break theme switching.
 
 ## Other directories
 
-- **`configs/`** — static config templates (neovim Lua files, alacritty, ssh, typora, etc.) copied verbatim into `~/.config` by installers. Edit the template here, not the deployed copy.
+- **`configs/`** — static config templates (neovim Lua files, kitty, ssh, typora, etc.) copied verbatim into `~/.config` by installers. Edit the template here, not the deployed copy.
 - **`defaults/bash/`** — shell config sourced from the user's `~/.bashrc`: `aliases`, `functions`, `prompt`, `shell`, `init` (mise/zoxide/fzf activation), `inputrc`. `rc` is the file that chains them.
-- **`applications/`** — `.desktop` launcher generators (e.g. `Neovim.sh` makes nvim launch inside Alacritty) and icons.
+- **`applications/`** — `.desktop` launcher generators (e.g. `Neovim.sh` makes nvim launch inside Kitty) and icons.
 - **`uninstall/`** — mirror of installers; the Uninstall menu lets the user pick one via `gum file`.
 
 ## Commit conventions
