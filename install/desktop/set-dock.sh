@@ -3,7 +3,7 @@
 # Favorite apps for dock
 apps=(
   "brave-browser.desktop"
-  "Alacritty.desktop"
+  "kitty.desktop"
   "Neovim.desktop"
   "code.desktop"
   "pinta_pinta.desktop"

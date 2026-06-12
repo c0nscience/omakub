@@ -5,7 +5,7 @@ cat <<EOF >~/.local/share/applications/About.desktop
 Version=1.0
 Name=About
 Comment=System information from Fastfetch
-Exec=alacritty --config-file /home/$USER/.config/alacritty/pane.toml --class=About --title=About -e bash -c 'fastfetch; read -n 1 -s'
+Exec=/home/$USER/.local/kitty.app/bin/kitty --config /home/$USER/.config/kitty/pane.conf --class=About --title=About bash -c 'fastfetch; read -n 1 -s'
 Terminal=false
 Type=Application
 Icon=/home/$USER/.local/share/omakub/applications/icons/Ubuntu.png

@@ -5,7 +5,7 @@ cat <<EOF >~/.local/share/applications/Docker.desktop
 Version=1.0
 Name=Docker
 Comment=Manage Docker containers with LazyDocker
-Exec=alacritty --config-file /home/$USER/.config/alacritty/pane.toml --class=Docker --title=Docker -e lazydocker
+Exec=/home/$USER/.local/kitty.app/bin/kitty --config /home/$USER/.config/kitty/pane.conf --class=Docker --title=Docker lazydocker
 Terminal=false
 Type=Application
 Icon=/home/$USER/.local/share/omakub/applications/icons/Docker.png

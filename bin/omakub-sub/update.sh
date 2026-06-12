@@ -6,7 +6,7 @@ CHOICES=(
 	"LazyGit       TUI for Git"
 	"LazyDocker    TUI for Docker"
 	"Neovim        Text editor that runs in the terminal"
-	"Zellij        Adds panes, tabs, and sessions to the terminal"
+	"Kitty         GPU-powered terminal with a native graphics protocol"
 	"<< Back       "
 )
 
@@ -21,6 +21,7 @@ else
 	case "$INSTALLER" in
 	"omakub") INSTALLER_FILE="$OMAKUB_PATH/bin/omakub-sub/migrate.sh" ;;
 	"ollama") INSTALLER_FILE="$OMAKUB_PATH/install/terminal/optional/app-ollama.sh" ;;
+	"kitty") INSTALLER_FILE="$OMAKUB_PATH/install/desktop/app-kitty.sh" ;;
 	*) INSTALLER_FILE="$OMAKUB_PATH/install/terminal/app-$INSTALLER.sh" ;;
 	esac
 

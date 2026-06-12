@@ -1,13 +1,16 @@
 #!/usr/bin/env sh
 
-# Make alacritty default terminal emulator
-sudo update-alternatives --set x-terminal-emulator /usr/bin/alacritty
+# Make kitty default terminal emulator (the kitty.app install isn't registered
+# with the alternatives system by apt, so add it first)
+sudo update-alternatives --install /usr/bin/x-terminal-emulator x-terminal-emulator "$HOME/.local/kitty.app/bin/kitty" 60
+sudo update-alternatives --set x-terminal-emulator "$HOME/.local/kitty.app/bin/kitty"
 
-# Adding alacritty to nautilus contextual menu requires the python wrapper for the libraries
+# Adding kitty to nautilus contextual menu requires the python wrapper for the libraries
 sudo apt install -y python3-nautilus
 mkdir -p ~/.local/share/nautilus-python/extensions/
+rm -f ~/.local/share/nautilus-python/extensions/open-alacritty.py
 
-cat > ~/.local/share/nautilus-python/extensions/open-alacritty.py <<TECHNICALLYNOTACONFIGSOHEREDOCCEDITIS
+cat > ~/.local/share/nautilus-python/extensions/open-kitty.py <<TECHNICALLYNOTACONFIGSOHEREDOCCEDITIS
 import os
 from urllib.parse import unquote
 from gi.repository import Nautilus, GObject
@@ -18,7 +21,7 @@ class OpenTerminalExtension(GObject.GObject, Nautilus.MenuProvider):
         filename = unquote(file.get_uri()[7:])
 
         os.chdir(filename)
-        os.system("alacritty")
+        os.system("$HOME/.local/kitty.app/bin/kitty")
 
     def menu_activate_cb(
         self,
@@ -47,8 +50,8 @@ class OpenTerminalExtension(GObject.GObject, Nautilus.MenuProvider):
 
         item = Nautilus.MenuItem(
             name="NautilusPython::openterminal_file_item",
-            label="Open in Alacritty",
-            tip="Open Alacritty In %s" % file.get_name(),
+            label="Open in Kitty",
+            tip="Open Kitty In %s" % file.get_name(),
         )
         item.connect("activate", self.menu_activate_cb, file)
 
@@ -62,8 +65,8 @@ class OpenTerminalExtension(GObject.GObject, Nautilus.MenuProvider):
     ) -> List[Nautilus.MenuItem]:
         item = Nautilus.MenuItem(
             name="NautilusPython::openterminal_file_item2",
-            label="Open in Alacritty",
-            tip="Open Alacritty In %s" % current_folder.get_name(),
+            label="Open in Kitty",
+            tip="Open Kitty In %s" % current_folder.get_name(),
         )
         item.connect("activate", self.menu_background_activate_cb, current_folder)
 

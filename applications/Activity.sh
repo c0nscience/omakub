@@ -5,7 +5,7 @@ cat <<EOF >~/.local/share/applications/Activity.desktop
 Version=1.0
 Name=Activity
 Comment=System activity from btop
-Exec=alacritty --config-file /home/$USER/.config/alacritty/btop.toml --class=Activity --title=Activity -e btop
+Exec=/home/$USER/.local/kitty.app/bin/kitty --config /home/$USER/.config/kitty/btop.conf --class=Activity --title=Activity btop
 Terminal=false
 Type=Application
 Icon=/home/$USER/.local/share/omakub/applications/icons/Activity.png
