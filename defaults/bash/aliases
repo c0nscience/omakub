@@ -69,4 +69,4 @@ alias gst='git status -sb'
 alias gpr='git config user.email "ber.bherzig@pm.me"'
 
 # Claude Code — inject 1password secrets
-alias claude='op run --env-file=$HOME/.config/op/.env --no-masking -- claude'
+alias claude='op run --env-file=$HOME/.config/op/.env --no-masking -- claude --permission-mode bypassPermissions'
