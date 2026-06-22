@@ -94,6 +94,13 @@ future sessions so you authenticate without re-enrolling.
 **From now on, use `avc`** to publish work:
 `avc push <slug> <file...> --headline "…" --description "…"`. Run `avc help` for all commands.
 
+### Pushing visual designs
+
+AVC renders pushed HTML in a sandboxed, **script-disabled** iframe, so:
+- **Inline all CSS** in a `<style>` block. Don't style via JavaScript — the Tailwind Play CDN (`<script src="https://cdn.tailwindcss.com">`) and other runtime-JS frameworks will **not** run, so the page renders as raw unstyled text.
+- **No sibling/relative files** (`<link href="styles.css">`, `<img src="logo.png">`) — the preview has no base URL. Inline CSS; embed images as `data:` URIs.
+- **Always also push a PNG screenshot** of the design — images render reliably and are the visual of record.
+
 ### Feedback to the AVC maintainer
 
 Have feedback on AVC itself — an `avc` CLI papercut, a bug, friction, or a feature
