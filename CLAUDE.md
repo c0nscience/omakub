@@ -94,6 +94,12 @@ future sessions so you authenticate without re-enrolling.
 **From now on, use `avc`** to publish work:
 `avc push <slug> <file...> --headline "…" --description "…"`. Run `avc help` for all commands.
 
+### Wait for the human's review
+
+After pushing, wait for the verdict instead of moving on blind:
+- `avc push <slug> <file...> --wait` — publish, then block until the human approves or requests changes.
+- `avc feedback --watch` — stream every verdict (approvals + change-requests) as it lands.
+
 ### Pushing visual designs
 
 AVC renders pushed HTML in a sandboxed, **script-disabled** iframe, so:
