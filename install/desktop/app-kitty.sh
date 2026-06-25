@@ -30,6 +30,7 @@ cp ~/.local/share/omakub/configs/kitty/pane.conf ~/.config/kitty/pane.conf
 cp ~/.local/share/omakub/configs/kitty/btop.conf ~/.config/kitty/btop.conf
 cp ~/.local/share/omakub/configs/kitty/tab_bar.py ~/.config/kitty/tab_bar.py
 cp ~/.local/share/omakub/configs/kitty/focus_or_tab.py ~/.config/kitty/focus_or_tab.py
+cp ~/.local/share/omakub/configs/kitty/rename.py ~/.config/kitty/rename.py
 cp ~/.local/share/omakub/themes/tokyo-night/kitty.conf ~/.config/kitty/theme.conf
 cp ~/.local/share/omakub/configs/kitty/fonts/CaskaydiaMono.conf ~/.config/kitty/font.conf
 cp ~/.local/share/omakub/configs/kitty/font-size.conf ~/.config/kitty/font-size.conf
