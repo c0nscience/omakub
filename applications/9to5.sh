@@ -3,7 +3,7 @@ cat <<EOF >~/.local/share/applications/9to5.desktop
 Version=1.0
 Name=Nine to Five
 Comment=Nine to Five
-Exec=brave-browser --app="https://9to5.app/app" --name="Nine to Five" --class="Nine to Five" --window-size=400,900
+Exec=brave-browser --app="https://9to5.app/activities" --name="Nine to Five" --class="Nine to Five" --window-size=400,900
 Terminal=false
 Type=Application
 Icon=/home/$USER/.local/share/omakub/applications/icons/9to5.png
