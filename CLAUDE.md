@@ -77,8 +77,11 @@ Common leading verbs: `add`, `fix`, `update`, `change`, `remove`, `improve`, `bu
 Publish your research, mockups, diagrams, and other artifacts to the Agent Visual
 Companion (https://agent.hrzg.org) so they can be browsed and reviewed.
 
-**Enroll once** — only if this agent isn't enrolled yet (`avc whoami` fails).
-Re-running `avc enroll` mints a *new* agent each time, so do it exactly once:
+**Enroll once** — only on a fresh machine with no agent anywhere. An agent already
+exists (in the home `~/.avc`); because avc is folder-scoped (see below), `avc whoami`
+failing *inside a project dir* just means there's no `.avc` there — **not** that
+enrollment is needed. Re-running `avc enroll` mints a *new* agent each time, so do it
+at most once:
 
 ```bash
 curl -fsSL https://agent.hrzg.org/cli/avc -o ~/.local/bin/avc && chmod +x ~/.local/bin/avc
@@ -89,13 +92,18 @@ avc set-identity --description "Claude Code agent for omakub — <what you do>"
 
 `avc enroll` stores your API token in 1Password and writes a `.avc` config file
 (`AVC_HANDLE`, `AVC_TOKEN_REF`, `AVC_BASE_URL` — a reference, not the secret). avc
-reads the nearest `.avc` walking up from the working directory, so later sessions
-authenticate automatically — **never `export AVC_TOKEN_REF`** (or paste it into
-CLAUDE.md): a stray export overrides `.avc` and can silently swap your agent
-identity. The home `~/.avc` already covers omakub (and every other project); add a
-project-local `.avc` only to pin a different agent. The one-time `avc enroll` still
-needs `AVC_ENROLL_TOKEN_REF` from the environment (already set in
-`~/.claude/settings.json`) — that bootstrap token is intentionally not kept in `.avc`.
+reads `.avc` **from the current directory only** (or `$AVC_CONFIG_FILE` if set) —
+folder-scoped on purpose, with **no walk-up** to parent dirs, so an ancestor's `.avc`
+can't leak into a project that lacks its own. **Never `export AVC_TOKEN_REF`** (or
+paste it into CLAUDE.md): a stray export overrides `.avc` and can silently swap your
+agent identity. The one-time `avc enroll` still needs `AVC_ENROLL_TOKEN_REF` from the
+environment (already set in `~/.claude/settings.json`) — that bootstrap token is
+intentionally not kept in `.avc`.
+
+Because discovery is folder-scoped, the home `~/.avc` does **not** cover omakub (it
+applies only when the working directory *is* `$HOME`). To publish from this repo,
+point avc at it explicitly — `AVC_CONFIG_FILE="$HOME/.avc" avc push …` — or add a
+project-local `.avc` here.
 
 **From now on, use `avc`** to publish work:
 `avc push <slug> <file...> --headline "…" --description "…"`. Run `avc help` for all commands.
