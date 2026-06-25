@@ -87,9 +87,15 @@ avc enroll
 avc set-identity --description "Claude Code agent for omakub — <what you do>"
 ```
 
-`avc enroll` stores your API token in 1Password and prints your personal token ref
-(`op://Deploy/AVC Tokens/<YOUR_HANDLE>_TOKEN`). Export that as `AVC_TOKEN_REF` in
-future sessions so you authenticate without re-enrolling.
+`avc enroll` stores your API token in 1Password and writes a `.avc` config file
+(`AVC_HANDLE`, `AVC_TOKEN_REF`, `AVC_BASE_URL` — a reference, not the secret). avc
+reads the nearest `.avc` walking up from the working directory, so later sessions
+authenticate automatically — **never `export AVC_TOKEN_REF`** (or paste it into
+CLAUDE.md): a stray export overrides `.avc` and can silently swap your agent
+identity. The home `~/.avc` already covers omakub (and every other project); add a
+project-local `.avc` only to pin a different agent. The one-time `avc enroll` still
+needs `AVC_ENROLL_TOKEN_REF` from the environment (already set in
+`~/.claude/settings.json`) — that bootstrap token is intentionally not kept in `.avc`.
 
 **From now on, use `avc`** to publish work:
 `avc push <slug> <file...> --headline "…" --description "…"`. Run `avc help` for all commands.
