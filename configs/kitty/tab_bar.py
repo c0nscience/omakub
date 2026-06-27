@@ -80,6 +80,32 @@ def _draw_mode_cell(screen: Screen) -> None:
     screen.draw(' ')
 
 
+def _compose_renamed(tab_obj) -> 'str | None':
+    """Tab title composed from its *renamed* panes, joined by ' ~ '
+    (e.g. 'proj1 ~ proj4'). Returns None — keep kitty's default title — when the
+    tab was named by hand (ctrl+g t r sets tab.name) or no pane was renamed, so
+    un-curated tabs look exactly as before. A renamed pane has override_title set;
+    un-renamed panes only show their cwd (set via PS1) and are skipped."""
+    if (getattr(tab_obj, 'name', '') or '').strip():
+        return None
+    names = []
+    for window in tab_obj:
+        name = (getattr(window, 'override_title', None) or '').strip()
+        if name and (not names or names[-1] != name):  # skip blanks + adjacent dups
+            names.append(name)
+    return ' ~ '.join(names) or None
+
+
+def _auto_tab_title(tab: TabBarData) -> 'str | None':
+    """Resolve the TabBarData to its live kitty Tab and compose from its renamed
+    panes. Fully guarded: any drift falls back to kitty's default title."""
+    try:
+        tab_obj = get_boss().tab_for_id(tab.tab_id)
+        return _compose_renamed(tab_obj) if tab_obj is not None else None
+    except Exception:
+        return None
+
+
 def draw_tab(
     draw_data: DrawData,
     screen: Screen,
@@ -92,6 +118,9 @@ def draw_tab(
 ) -> int:
     if index == 1:
         _draw_mode_cell(screen)
+    auto = _auto_tab_title(tab)
+    if auto:
+        tab = tab._replace(title=auto)
     return draw_tab_with_powerline(
         draw_data, screen, tab, before, max_title_length, index, is_last, extra_data
     )
