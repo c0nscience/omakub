@@ -4,6 +4,11 @@ HISTCONTROL=ignoreboth
 HISTSIZE=32768
 HISTFILESIZE="${HISTSIZE}"
 
+# Share history across panes in real time: append each command to the history
+# file immediately and import commands written by other shells, so a freshly
+# opened pane/tab has up-to-date history (default bash only writes it on exit).
+PROMPT_COMMAND="history -a; history -n${PROMPT_COMMAND:+; $PROMPT_COMMAND}"
+
 # Autocompletion
 source /usr/share/bash-completion/bash_completion
 
