@@ -1,0 +1,8 @@
+# Deployed by omakub to ~/.config/atuin/config.toml (guarded: your edits win).
+# Full reference: https://docs.atuin.sh/configuration/config/
+
+# Enter inserts the selection into the prompt (fzf parity); second Enter runs it
+enter_accept = false
+
+# fzf-style query syntax: 'exact  ^prefix  suffix$  !negate
+search_mode = "fuzzy"

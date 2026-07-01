@@ -18,3 +18,16 @@ if command -v fzf &> /dev/null; then
     source /usr/share/doc/fzf/examples/key-bindings.bash
   fi
 fi
+
+if command -v atuin &> /dev/null; then
+  if [ -f "$HOME/.config/atuin/bash-preexec.sh" ]; then
+    source "$HOME/.config/atuin/bash-preexec.sh"
+  fi
+  eval "$(atuin init bash --disable-up-arrow)"
+  # bash-preexec's install (first prompt) strips ignorespace from HISTCONTROL
+  # because it reads commands back via `history 1`. Re-assert it every prompt
+  # so leading-space commands stay out of the pane-shared history; in their
+  # place atuin records the preceding command once more.
+  __omakub_restore_histcontrol() { HISTCONTROL=ignoreboth; }
+  precmd_functions+=(__omakub_restore_histcontrol)
+fi
