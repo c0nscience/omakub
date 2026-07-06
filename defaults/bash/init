@@ -3,6 +3,10 @@ if command -v mise &> /dev/null; then
 fi
 
 if command -v zoxide &> /dev/null; then
+  # atuin/bash-preexec (below) hook PROMPT_COMMAND after zoxide, which trips
+  # zoxide's doctor into a false "possible configuration issue" warning on every
+  # shell. The ordering is intentional and zoxide still works, so skip the check.
+  export _ZO_DOCTOR=0
   eval "$(zoxide init bash)"
 fi
 
