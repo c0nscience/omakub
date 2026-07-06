@@ -1,6 +1,13 @@
 #!/bin/bash
 
-cat <<EOF >~/.local/share/applications/Yazi.desktop
+# yazi ships only in the optional oxidise bundle (install/terminal/optional/
+# app-oxidise.sh). Plant the app-grid launcher only when the binary is actually
+# installed; otherwise remove any stale entry — so a machine without yazi never
+# shows a launcher that opens a kitty window and immediately closes. This runs
+# from the fresh-install glob, the yazi migrations, and app-oxidise.sh; the guard
+# keeps the launcher's presence in sync with the binary on every one of them.
+if command -v yazi &>/dev/null; then
+  cat <<EOF >~/.local/share/applications/Yazi.desktop
 [Desktop Entry]
 Version=1.0
 Name=Yazi
@@ -12,3 +19,6 @@ Icon=/home/$USER/.local/share/omakub/applications/icons/Yazi.png
 Categories=GTK;
 StartupNotify=false
 EOF
+else
+  rm -f ~/.local/share/applications/Yazi.desktop
+fi

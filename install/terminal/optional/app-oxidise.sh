@@ -10,3 +10,13 @@ cargo install --locked ncspot tree-sitter-cli
 rustup component add rust-analyzer
 
 mise use -g fzf@latest
+
+# yazi was installed above (into ~/.cargo/bin); (re)generate its GNOME launcher
+# now that the binary exists. Skip on terminal-only hosts. Run in a subshell with
+# cargo's bin dir on PATH so Yazi.sh's `command -v yazi` guard sees it.
+if [[ "$XDG_CURRENT_DESKTOP" == *"GNOME"* ]]; then
+  (
+    export PATH="$HOME/.cargo/bin:$PATH"
+    source $OMAKUB_PATH/applications/Yazi.sh
+  )
+fi
