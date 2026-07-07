@@ -1,3 +1,12 @@
+# These initializers (mise/zoxide/fzf/atuin) hook readline and PROMPT_COMMAND and
+# only do anything useful in an interactive shell. Bail out in non-interactive
+# shells: at graphical login GDM's /etc/gdm3/Xsession sources ~/.profile ->
+# ~/.bashrc -> this file in a NON-interactive bash, where `atuin init`'s readline
+# `bind` prints "bind: warning: line editing not enabled" to stderr — and GDM
+# turns any stderr from ~/.profile into a spurious "Error found when loading
+# ~/.profile" popup (it checks `[ -s "$ERR" ]`, not the exit code).
+[[ $- == *i* ]] || return 0
+
 if command -v mise &> /dev/null; then
   eval "$(mise activate bash)"
 fi
