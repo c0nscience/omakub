@@ -136,12 +136,12 @@ alias fix_fkeys='echo 2 | sudo tee /sys/module/hid_apple/parameters/fnmode'
 # Spotify window is too large on many displays, so fix this by zooming it down
 alias fix_spotify_window_size="sudo sed -i 's|^Exec=.*|Exec=spotify --force-device-scale-factor=1.5 %U|' /usr/local/share/applications/spotify.desktop"
 
-# Route ssh through "kitten ssh" when inside kitty so the remote gets kitty's
-# terminfo (fixes "Error opening terminal: xterm-kitty" for htop, vim, less, …).
-# Bypass a host that chokes on kitten's bootstrap with: command ssh user@host
+# Send a portable TERM to remote hosts when inside kitty, so less/vim/htop work
+# without kitty's terminfo being installed on the remote (fixes "terminal is not
+# fully functional" / "Error opening terminal: xterm-kitty"). No remote changes.
 ssh() {
-  if [ "$TERM" = "xterm-kitty" ] && command -v kitten >/dev/null 2>&1; then
-    kitten ssh "$@"
+  if [ "$TERM" = "xterm-kitty" ]; then
+    TERM=xterm-256color command ssh "$@"
   else
     command ssh "$@"
   fi
