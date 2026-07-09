@@ -69,4 +69,4 @@ alias gst='git status -sb'
 alias gpr='git config user.email "ber.bherzig@pm.me"'
 
 # Claude Code — inject 1password secrets
-alias claude='op run --env-file=$HOME/.config/op/.env --no-masking -- claude --permission-mode bypassPermissions --effort max'
+alias claude='op run --env-file=$HOME/.config/op/.env --no-masking -- claude --append-system-prompt "No preamble, no postamble, no flattery — just do the task and stop." --permission-mode bypassPermissions --effort ultracode'
