@@ -154,3 +154,38 @@ function y() {
 	[ "$cwd" != "$PWD" ] && [ -d "$cwd" ] && builtin cd -- "$cwd"
 	rm -f -- "$tmp"
 }
+
+# List the running jdtls language servers — one JVM per open Java project — with
+# the project each serves and its memory, so idle ones eating RAM are easy to spot.
+# Neovim keeps a project's jdtls alive until you quit that nvim. Run `jdtls-ps -k`
+# to pick idle servers to stop and reclaim ~1.5-2G each; a stopped server's nvim
+# needs :LspRestart (or reopen) to get its LSP back.
+jdtls-ps() {
+  local pid proj rss cpu et rows=""
+  # pgrep excludes its own process, so this never matches the helper itself.
+  for pid in $(pgrep -f 'org\.eclipse\.equinox\.launcher_.*/jdtls/' 2>/dev/null); do
+    [ -r "/proc/$pid/cmdline" ] || continue
+    # project name is the dir after /jdtls/ in the value of the -data argument
+    proj=$(tr '\0' '\n' <"/proc/$pid/cmdline" | awk 'prev=="-data"{print;exit}{prev=$0}' |
+      sed -nE 's#.*/jdtls/([^/]+)/.*#\1#p')
+    read -r rss cpu et < <(ps -o rss=,pcpu=,etime= -p "$pid" 2>/dev/null)
+    rows+="${pid}	${proj:-?}	$((${rss:-0} / 1024))	${cpu:-?}	${et:-?}"$'\n'
+  done
+  if [ -z "$rows" ]; then
+    echo "No jdtls servers running."
+    return 0
+  fi
+  { printf 'PID\tPROJECT\tRSS_MB\tCPU%%\tUPTIME\n'; printf '%s' "$rows"; } | column -t -s $'\t'
+  [ "$1" = "-k" ] || [ "$1" = "kill" ] || return 0
+  if ! command -v gum >/dev/null 2>&1; then
+    echo "gum not found — stop one manually with: kill <PID>"
+    return 1
+  fi
+  local sel
+  sel=$(printf '%s' "$rows" | column -t -s $'\t' |
+    gum choose --no-limit --header "Stop which jdtls servers? (their nvim needs :LspRestart)") || return 0
+  [ -z "$sel" ] && { echo "Nothing selected."; return 0; }
+  printf '%s\n' "$sel" | awk '{ print $1 }' | while read -r pid; do
+    kill "$pid" 2>/dev/null && echo "stopped jdtls $pid" || echo "could not stop $pid"
+  done
+}
