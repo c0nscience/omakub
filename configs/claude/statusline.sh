@@ -76,7 +76,12 @@ if [[ "$RESET5" =~ ^[0-9]+$ ]] && [ "$RESET5" -gt "$NOW" ]; then
   REM=$((RESET5 - NOW)); RH=$((REM / 3600)); RM=$(((REM % 3600) / 60))
   [ "$RH" -gt 0 ] && REMAIN="${RH}h ${RM}m" || REMAIN="${RM}m"
   RESETAT=$(date -d @"$RESET5" +%H:%M)
-  [[ "$S5PCT" =~ ^[0-9]+$ ]] && USEDPCT=$(clr "$S5PCT" "${S5PCT}%")
+  # used_percentage arrives as a float (e.g. 72.5), so round it — matching on
+  # ^[0-9]+$ alone rejects every real value and silently drops this segment.
+  if [[ "$S5PCT" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+    P=$(awk -v p="$S5PCT" 'BEGIN{printf "%.0f", p}')
+    USEDPCT=$(clr "$P" "${P}%")
+  fi
 fi
 
 # --- status line segments: one per line; reorder or comment freely, joined by " | " ---
