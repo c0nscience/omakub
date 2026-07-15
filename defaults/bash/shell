@@ -9,6 +9,12 @@ HISTFILESIZE="${HISTSIZE}"
 # opened pane/tab has up-to-date history (default bash only writes it on exit).
 PROMPT_COMMAND="history -a; history -n${PROMPT_COMMAND:+; $PROMPT_COMMAND}"
 
+# Disable XON/XOFF flow control so Ctrl-S stops freezing the terminal (and frees
+# Ctrl-S for apps like vim). Only run with a real tty: in non-interactive shells
+# (e.g. GDM's login bash) stty would print "Inappropriate ioctl for device",
+# which GDM turns into a spurious ~/.profile error popup.
+[[ $- == *i* ]] && stty -ixon 2>/dev/null
+
 # Autocompletion
 source /usr/share/bash-completion/bash_completion
 
