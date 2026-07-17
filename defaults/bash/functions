@@ -179,6 +179,27 @@ function y() {
 	rm -f -- "$tmp"
 }
 
+# Claude Code — 1password secrets + a memory-capped cgroup around the whole
+# session tree (workers, MCP servers, browsers they launch). A runaway worker
+# hits the scope's MemoryMax and the kernel kills the biggest process inside
+# the scope only, instead of exhausting RAM+swap and freezing the machine
+# (2026-07-17: two leaked workers ate 26G and froze the box for 40 min).
+# Inside a Claude Code shell (CLAUDECODE set) run the plain binary: the
+# session is already inside a capped scope, and a nested systemd-run scope
+# would be a sibling that escapes the parent's limits.
+claude() {
+  if [[ -v CLAUDECODE ]]; then
+    command claude "$@"
+    return
+  fi
+  systemd-run --user --scope -q \
+    -p MemoryHigh=8G -p MemoryMax=12G -p MemorySwapMax=4G \
+    op run --env-file="$HOME/.config/op/.env" --no-masking -- \
+    "$(type -P claude)" \
+    --append-system-prompt "No preamble, no postamble, no flattery — just do the task and stop." \
+    --permission-mode bypassPermissions --effort ultracode "$@"
+}
+
 # List the running jdtls language servers — one JVM per open Java project — with
 # the project each serves and its memory, so idle ones eating RAM are easy to spot.
 # Neovim keeps a project's jdtls alive until you quit that nvim. Run `jdtls-ps -k`
