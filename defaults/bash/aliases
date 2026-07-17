@@ -1,3 +1,11 @@
+# Aliases are an interactive-shell convenience, and bash only expands them when
+# `expand_aliases` is set — which it is not in a non-interactive shell. Anything
+# that snapshots this shell and force-enables `shopt -s expand_aliases` (Claude
+# Code does exactly this) would otherwise inherit the whole set, and then `grep`
+# is ripgrep, `ls` is eza and `cat` is bat — with different flags and output than
+# the coreutils tools a generated script expects. Keep them interactive-only.
+[[ $- == *i* ]] || return 0
+
 alias cat='bat'
 
 # File system
@@ -8,7 +16,6 @@ alias la='ls -a'
 alias lt='eza --tree --level=2 --long --icons --git'
 alias lta='lt -a'
 alias ff="fzf -m --preview 'bat --style=numbers --color=always {}'"
-alias cd='z'
 
 # Directories
 alias ..='cd ..'

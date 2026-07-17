@@ -16,7 +16,16 @@ if command -v zoxide &> /dev/null; then
   # zoxide's doctor into a false "possible configuration issue" warning on every
   # shell. The ordering is intentional and zoxide still works, so skip the check.
   export _ZO_DOCTOR=0
-  eval "$(zoxide init bash)"
+  # --cmd cd makes zoxide define `cd` as a *function* rather than us aliasing
+  # cd=z. That matters because this whole file is skipped in non-interactive
+  # shells: with an alias, `cd` kept pointing at a `z` that was never defined
+  # there and every cd died with "z: command not found"; with a function, an
+  # undefined `cd` simply falls back to the builtin. zoxide still short-circuits
+  # on a real directory, so `cd -`, `cd ..` and `cd /abs/path` behave normally.
+  eval "$(zoxide init bash --cmd cd)"
+  # Muscle memory. Safe to alias here — guarded by the interactivity check above.
+  alias z='cd'
+  alias zi='cdi'
 fi
 
 if command -v fzf &> /dev/null; then
