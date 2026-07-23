@@ -49,12 +49,13 @@ if [ -n "$DIR" ]; then
   BRANCH=$(git -C "$DIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
 fi
 
-# AVC agent handle — read only the working dir's own .avc (folder-scoped, no walk-up)
-AVC=""
-if [ -n "$DIR" ] && [ -r "$DIR/.avc" ]; then
-  AVC=$(sed -n 's/^[[:space:]]*AVC_HANDLE=//p' "$DIR/.avc" | head -n1)
-  AVC=${AVC%\"}; AVC=${AVC#\"}
-  AVC=${AVC%\'}; AVC=${AVC#\'}
+# stet agent handle (formerly AVC) — read only the working dir's own .stet
+# (folder-scoped, no walk-up)
+STET=""
+if [ -n "$DIR" ] && [ -r "$DIR/.stet" ]; then
+  STET=$(sed -n 's/^[[:space:]]*STET_HANDLE=//p' "$DIR/.stet" | head -n1)
+  STET=${STET%\"}; STET=${STET#\"}
+  STET=${STET%\'}; STET=${STET#\'}
 fi
 
 # session duration, adaptive top-2 units (date handles all rollover)
@@ -106,7 +107,7 @@ case "$EFFORT" in
   *)                  EFFORT_C="$EFFORT" ;;
 esac
 seg+=("$MODEL_C${EFFORT_C:+ · $EFFORT_C}")
-[ -n "$AVC" ] && seg+=("🤖 $(printf '\033[38;5;205m%s\033[0m' "$AVC")")
+[ -n "$STET" ] && seg+=("🤖 $(printf '\033[38;5;205m%s\033[0m' "$STET")")
 [ -n "$STYLE" ] && [ "$STYLE" != "default" ] && seg+=("🎨 $STYLE")
 [ -n "$BRANCH" ] && seg+=("$BRANCH")
 seg+=("🧠 $(clr "$CTXPCT" "$(fmt $USED)/$(fmt $SIZE) ${CTXPCT}%")")
