@@ -200,6 +200,34 @@ claude() {
     --permission-mode bypassPermissions --effort ultracode "$@"
 }
 
+# Claude Code harness on GLM 5.2 instead of Anthropic, for security work whose
+# artifacts (exploit payloads, C2 traces) commercial-model guardrails refuse to
+# analyze. Routed through OpenRouter's Anthropic-compatible endpoint; the exact
+# host (novita/fp8) is pinned by the `claude-sec` preset on openrouter.ai,
+# because endpoint pinning is a request-body field a model slug can't express.
+# The token comes from its own env file (shipped by migration 1785348548) so
+# normal `claude` sessions never inherit ANTHROPIC_AUTH_TOKEN — that variable
+# overrides subscription auth. Same memory-capped scope as `claude`, but no
+# bypassPermissions: a third-party model gets each command approved by hand.
+claude-sec() {
+  if [[ -v CLAUDECODE ]]; then
+    echo "claude-sec: already inside a Claude Code session — running plain claude (no GLM reroute)" >&2
+    command claude "$@"
+    return
+  fi
+  local model="z-ai/glm-5.2@preset/claude-sec"
+  systemd-run --user --scope -q \
+    -p MemoryHigh=8G -p MemoryMax=12G -p MemorySwapMax=4G \
+    op run --env-file="$HOME/.config/op/.env" \
+    --env-file="$HOME/.config/op/claude-sec.env" --no-masking -- \
+    env ANTHROPIC_BASE_URL="https://openrouter.ai/api" \
+    ANTHROPIC_API_KEY="" \
+    ANTHROPIC_MODEL="$model" \
+    ANTHROPIC_SMALL_FAST_MODEL="$model" \
+    "$(type -P claude)" \
+    --append-system-prompt "No preamble, no postamble, no flattery — just do the task and stop." "$@"
+}
+
 # List the running jdtls language servers — one JVM per open Java project — with
 # the project each serves and its memory, so idle ones eating RAM are easy to spot.
 # Neovim keeps a project's jdtls alive until you quit that nvim. Run `jdtls-ps -k`
