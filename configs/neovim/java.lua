@@ -1,7 +1,50 @@
 return {
+  -- Cut the per-keystroke request fan-out for Java. Measured with an LspRequest/
+  -- LspNotify tally: every didChange flush also fired textDocument/foldingRange
+  -- (LazyVim sets foldexpr to vim.lsp.foldexpr) and textDocument/inlayHint, both
+  -- whole-document requests. On a warm server each answers in ~ms; on a server
+  -- that is importing or partially paged out they queue and the editor feels
+  -- dead. Java gets treesitter folds (same fold quality, zero server traffic)
+  -- and no inlay hints; every other language keeps LazyVim defaults.
+  {
+    "neovim/nvim-lspconfig",
+    opts = function(_, opts)
+      opts.inlay_hints = opts.inlay_hints or {}
+      opts.inlay_hints.exclude = opts.inlay_hints.exclude or {}
+      table.insert(opts.inlay_hints.exclude, "java")
+    end,
+  },
+
+  {
   "mfussenegger/nvim-jdtls",
+  init = function()
+    vim.api.nvim_create_autocmd("FileType", {
+      pattern = "java",
+      callback = function()
+        vim.opt_local.foldmethod = "expr"
+        vim.opt_local.foldexpr = "v:lua.vim.treesitter.foldexpr()"
+      end,
+    })
+  end,
   opts = {
     jdtls = function(config)
+      -- Never let :w block on the server. nvim core sends willSaveWaitUntil
+      -- SYNCHRONOUSLY from BufWritePre (runtime lsp.lua:927 request_sync,
+      -- 1s cap per save) when the server declares the capability. Measured on
+      -- 2026-07-30 14:40 via perf.log: jdtls, busy after a test run, answered
+      -- after 34.6s - the save timed out, the error popup mounted mid-storm and
+      -- the editor froze. jdtls only uses willSaveWaitUntil to return
+      -- java.saveActions edits (organize imports on save - off here), so
+      -- dropping the client capability costs nothing and the server then never
+      -- registers the request.
+      config.capabilities = vim.tbl_deep_extend("force", config.capabilities or {}, {
+        textDocument = {
+          synchronization = {
+            willSaveWaitUntil = false,
+          },
+        },
+      })
+
       -- NOTE: jdt_uri_timeout_ms is deliberately left at its 5000ms default.
       -- Lowering it looks tempting because open_classfile vim.waits on it per
       -- jdt:// buffer (jdtls.lua:1282) and snacks' picker bufloads every jdt://
@@ -236,5 +279,6 @@ return {
         },
       },
     },
+  },
   },
 }
