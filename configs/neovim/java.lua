@@ -2,14 +2,39 @@ return {
   "mfussenegger/nvim-jdtls",
   opts = {
     jdtls = function(config)
+      -- One shared jar index across all project workspaces: the same dependency
+      -- jars were being re-indexed (~1.7GB duplicated) once per workspace, and
+      -- page-cached once per running server. jdtls does not create the dir itself.
+      local shared_index = vim.fn.expand("~/.cache/jdtls-shared-index")
+      vim.fn.mkdir(shared_index, "p")
+
       -- G1 (low-pause) with a 2g heap. Heap is deliberately NOT raised: several
       -- jdtls JVMs run at once (one per open project) and the box is RAM-bound.
+      -- On JDK 21 G1 is already the ergonomic default — -Xmx2g is the load-bearing
+      -- flag (unbounded, each server grows toward 1/4 of RAM).
       -- The vscode-java ParallelGC-era knobs (GCTimeRatio/AdaptiveSizePolicyWeight/
       -- disableMemoryMapping) were removed: they fight G1 and disabling mmap stops
       -- the OS page cache from sharing dependency jars across the parallel servers.
       vim.list_extend(config.cmd, {
         "--jvm-arg=-Xmx2g",
         "--jvm-arg=-XX:+UseG1GC",
+        -- mason's launcher hardcodes -Xms1G (later flag wins). A low floor plus
+        -- periodic GC (JEP 346) lets idle servers uncommit heap back to the OS —
+        -- the biggest RAM lever across parallel servers without touching -Xmx.
+        "--jvm-arg=-Xms256m",
+        "--jvm-arg=-XX:G1PeriodicGCInterval=300000",
+        "--jvm-arg=-XX:+UseStringDeduplication",
+        -- Guard, not a saving: converts a pathological classloader leak into a
+        -- contained OOME of one server instead of box-wide swap thrash.
+        "--jvm-arg=-XX:MaxMetaspaceSize=512m",
+        -- vscode-java ships this: a stray JVM unified-logging line on stdout
+        -- would corrupt the LSP JSON-RPC stream.
+        "--jvm-arg=-Xlog:disable",
+        -- vscode-java defaults: skip the VM-installation filesystem scan on every
+        -- start; breadth-first Maven dependency collector (same result, faster).
+        "--jvm-arg=-DDetectVMInstallationsJob.disabled=true",
+        "--jvm-arg=-Daether.dependencyCollector.impl=bf",
+        "--jvm-arg=-Djdt.core.sharedIndexLocation=" .. shared_index,
       })
 
       -- LazyVim's `$MASON/share/java-test/*.jar` glob feeds jdtls two non-OSGi jars
@@ -34,6 +59,19 @@ return {
       return config
     end,
 
+    -- Invoked by LazyVim's java extra from its jdtls-guarded LspAttach handler.
+    on_attach = function(args)
+      local client = vim.lsp.get_client_by_id(args.data.client_id)
+      if not client then
+        return
+      end
+      -- Drop semantic tokens for jdtls only: nvim re-requests full-document tokens
+      -- on every didChange flush (jdtls has no delta support), a whole-file AST
+      -- walk that mostly dies as -32801 mid-typing and is recomputed. Treesitter
+      -- already highlights Java; only semantic modifiers are lost.
+      vim.lsp.semantic_tokens.enable(false, { client_id = client.id })
+    end,
+
     -- Don't hot-swap classes on every save while debugging (rebuild+redefine over
     -- JDWP stalls each save). Restart the session to pick up edits, IntelliJ-style.
     dap = { hotcodereplace = "off" },
@@ -54,6 +92,25 @@ return {
         edit = {
           validateAllOpenBuffersOnChanges = false,
         },
+        completion = {
+          -- The server caps proposals at 50 and marks the list incomplete, so the
+          -- client re-runs a full codeComplete pass on EVERY keystroke while the
+          -- menu is open. 0 = unlimited + isIncomplete=false: one server pass per
+          -- context, then pure client-side filtering. Only sane together with
+          -- lazyResolveTextEdit (VS Code ships the same pair): text edits are
+          -- computed at resolve/accept instead of eagerly for every proposal.
+          -- A stable proposal store also ends the "Invalid completion proposal"
+          -- SEVERE flood — those were resolves racing a store that the
+          -- per-keystroke re-requests kept clearing.
+          maxResults = 0,
+          lazyResolveTextEdit = { enabled = true },
+          -- Server default matches case-insensitively; firstLetter (the VS Code
+          -- default) keeps the list smaller and better ranked.
+          matchCase = "firstLetter",
+        },
+        -- Server default is ON (VS Code ships false): any future codelens refresh
+        -- would run a workspace reference search per method. Parity guard.
+        referencesCodeLens = { enabled = false },
         -- Full "all" hints recompute over RPC behind the reconcile queue on big files.
         inlayHints = {
           parameterNames = { enabled = "literals" },
