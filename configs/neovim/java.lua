@@ -217,16 +217,19 @@ return {
           validateAllOpenBuffersOnChanges = false,
         },
         completion = {
-          -- The server caps proposals at 50 and marks the list incomplete, so the
-          -- client re-runs a full codeComplete pass on EVERY keystroke while the
-          -- menu is open. 0 = unlimited + isIncomplete=false: one server pass per
-          -- context, then pure client-side filtering. Only sane together with
-          -- lazyResolveTextEdit (VS Code ships the same pair): text edits are
-          -- computed at resolve/accept instead of eagerly for every proposal.
-          -- A stable proposal store also ends the "Invalid completion proposal"
-          -- SEVERE flood — those were resolves racing a store that the
-          -- per-keystroke re-requests kept clearing.
-          maxResults = 0,
+          -- The server's default cap of 50 marks every list incomplete, so the
+          -- client re-ran a full codeComplete pass per keystroke (and the
+          -- resulting store churn caused the "Invalid completion proposal"
+          -- SEVERE flood). 0 (= unlimited, the VS Code default) fixed that but
+          -- had no ceiling at all: perf.log 2026-07-30 16:10 caught a generic
+          -- context in a god-class serializing the whole 338-jar classpath -
+          -- a 4.9s completion followed by a +5.4GB transient Lua spike, and
+          -- LuaJIT arena memory never returns to the OS at that scale (that is
+          -- where the recurring 6-8GB nvim processes came from; heap collapses
+          -- back to ~80MB, RSS stays). 2000 keeps virtually every real context
+          -- below the cap (single pass, isIncomplete=false, stable store) while
+          -- bounding the pathological ones at a few MB instead of gigabytes.
+          maxResults = 2000,
           lazyResolveTextEdit = { enabled = true },
           -- Server default matches case-insensitively; firstLetter (the VS Code
           -- default) keeps the list smaller and better ranked.
