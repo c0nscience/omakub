@@ -3,6 +3,7 @@
 CHOICES=(
 	"Omakub        Update Omakub itself and run any migrations"
 	"Ollama        Run LLMs, like Meta's Llama3, locally"
+	"Opencode      AI coding agent in the terminal"
 	"LazyGit       TUI for Git"
 	"LazyDocker    TUI for Docker"
 	"Neovim        Text editor that runs in the terminal"
@@ -21,6 +22,7 @@ else
 	case "$INSTALLER" in
 	"omakub") INSTALLER_FILE="$OMAKUB_PATH/bin/omakub-sub/migrate.sh" ;;
 	"ollama") INSTALLER_FILE="$OMAKUB_PATH/install/terminal/optional/app-ollama.sh" ;;
+	"opencode") INSTALLER_FILE="$OMAKUB_PATH/install/terminal/optional/app-opencode.sh" ;;
 	"kitty") INSTALLER_FILE="$OMAKUB_PATH/install/desktop/app-kitty.sh" ;;
 	*) INSTALLER_FILE="$OMAKUB_PATH/install/terminal/app-$INSTALLER.sh" ;;
 	esac

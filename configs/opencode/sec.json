@@ -7,10 +7,11 @@
   // normal `opencode` run keeps its own global config and provider.
   //
   // opencode is provider-agnostic, which is the whole reason this exists: the
-  // equivalent Claude Code wrapper has to be talked out of sending Anthropic-only
+  // equivalent Claude Code wrapper had to be talked out of sending Anthropic-only
   // request fields and Anthropic server tools that OpenRouter cannot execute for
-  // a non-Claude model. Here websearch and webfetch are opencode's own
-  // client-side tools, so they work against GLM instead of failing the turn.
+  // a non-Claude model, and was dropped for this. Here websearch and webfetch
+  // are opencode's own client-side tools, so they work against GLM instead of
+  // failing the turn.
   //
   // The @preset/claude-sec suffix resolves an OpenRouter preset that pins the
   // host to novita/fp8 (endpoint tag `novita/fp8`, 1M context / 128k output).
@@ -33,8 +34,8 @@
     }
   },
 
-  // Same posture as claude-sec: a third-party model gets every mutating action
-  // approved by hand. Read-only tools keep their defaults.
+  // A third-party model gets every mutating action approved by hand. Read-only
+  // tools keep their defaults.
   "permission": {
     "bash": "ask",
     "edit": "ask",

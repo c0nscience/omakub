@@ -4,6 +4,7 @@ CHOICES=(
   "Dev Editor        Install alternative programming editors"
   "Dev Language      Install programming language environment"
   "Dev Database      Install development database in Docker"
+  "Opencode          AI coding agent in the terminal"
   "Openvpn           Install openvpn3"
   "Oxidise           Install useful rust apps"
   "Audacity          Record and edit audio"
@@ -48,6 +49,7 @@ else
   "dev-language") INSTALLER_FILE="$OMAKUB_PATH/install/terminal/select-dev-language.sh" ;;
   "dev-database") INSTALLER_FILE="$OMAKUB_PATH/install/terminal/select-dev-storage.sh" ;;
   "ollama") INSTALLER_FILE="$OMAKUB_PATH/install/terminal/optional/app-ollama.sh" ;;
+  "opencode") INSTALLER_FILE="$OMAKUB_PATH/install/terminal/optional/app-opencode.sh" ;;
   "tailscale") INSTALLER_FILE="$OMAKUB_PATH/install/terminal/optional/app-tailscale.sh" ;;
   "openvpn") INSTALLER_FILE="$OMAKUB_PATH/install/terminal/optional/app-openvpn.sh" ;;
   "oxidise") INSTALLER_FILE="$OMAKUB_PATH/install/terminal/optional/app-oxidise.sh" ;;

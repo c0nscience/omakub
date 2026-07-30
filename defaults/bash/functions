@@ -200,87 +200,25 @@ claude() {
     --permission-mode bypassPermissions --effort ultracode "$@"
 }
 
-# Claude Code harness on GLM 5.2 instead of Anthropic, for security work whose
-# artifacts (exploit payloads, C2 traces) commercial-model guardrails refuse to
-# analyze. Routed through OpenRouter's Anthropic-compatible endpoint; the exact
-# host (novita/fp8) is pinned by the `claude-sec` preset on openrouter.ai,
-# because endpoint pinning is a request-body field a model slug can't express.
-# The token comes from its own env file (shipped by migration 1785348548) so
-# normal `claude` sessions never inherit ANTHROPIC_AUTH_TOKEN — that variable
-# overrides subscription auth. Same memory-capped scope as `claude`, but no
-# bypassPermissions: a third-party model gets each command approved by hand.
-#
-# Everything after ANTHROPIC_BASE_URL exists because Claude Code treats a custom
-# base URL as an Anthropic-format endpoint and sends GLM the full request it
-# would send api.anthropic.com. Two classes of 400 follow, and only the env
-# vars below suppress them — request shape is not something the preset can fix:
-#   - Anthropic-only body fields (context_management, output_config, the beta
-#     tool fields strict/defer_loading) come back as "Extra inputs are not
-#     permitted". Claude Code does NOT auto-retry these, so they surface as a
-#     hard failure; DISABLE_EXPERIMENTAL_BETAS drops them at the client.
-#   - Any model slot left unpinned resolves to a real Claude id and OpenRouter
-#     rejects it. ANTHROPIC_MODEL only covers the main slot, so the alias slots
-#     and the subagent slot are pinned to the same model. ANTHROPIC_SMALL_FAST_MODEL
-#     is deprecated in favour of ANTHROPIC_DEFAULT_HAIKU_MODEL, which is also
-#     what background tasks use.
-# ANTHROPIC_API_KEY is unset rather than set empty: an empty-but-present value
-# still sends an x-api-key header alongside the bearer token and trips the
-# two-credential-sources warning. ANTHROPIC_AUTH_TOKEN already outranks the
-# subscription on its own. Nonessential traffic is off so a session opened to
-# keep security artifacts away from Anthropic does not also phone home for
-# version checks and telemetry — it disables auto-update for this session only.
-# No token-limit overrides: the pinned novita host serves 1M context / 128k
-# output, the same envelope Claude Code already assumes.
-#
-# WebSearch and WebFetch are denied because both are Anthropic *server* tools
-# (web_search_20260209, web_fetch_20260209) - the endpoint is expected to run
-# them itself, which OpenRouter cannot do for a non-Claude model. It accepts the
-# definitions, so turns succeed until the model actually reaches for one, then
-# the whole turn dies with 400 "Server tool request failed". There is no env var
-# for this; denying the two tools is the only client-side lever. Web research in
-# a claude-sec session therefore goes through bash (curl), which is already
-# hand-approved per command since this wrapper has no bypassPermissions.
-claude-sec() {
-  if [[ -v CLAUDECODE ]]; then
-    echo "claude-sec: already inside a Claude Code session — running plain claude (no GLM reroute)" >&2
-    command claude "$@"
-    return
-  fi
-  local model="z-ai/glm-5.2@preset/claude-sec"
-  systemd-run --user --scope -q \
-    -p MemoryHigh=8G -p MemoryMax=12G -p MemorySwapMax=4G \
-    op run --env-file="$HOME/.config/op/.env" \
-    --env-file="$HOME/.config/op/claude-sec.env" --no-masking -- \
-    env -u ANTHROPIC_API_KEY \
-    ANTHROPIC_BASE_URL="https://openrouter.ai/api" \
-    ANTHROPIC_MODEL="$model" \
-    ANTHROPIC_DEFAULT_OPUS_MODEL="$model" \
-    ANTHROPIC_DEFAULT_SONNET_MODEL="$model" \
-    ANTHROPIC_DEFAULT_HAIKU_MODEL="$model" \
-    CLAUDE_CODE_SUBAGENT_MODEL="$model" \
-    CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=1 \
-    CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 \
-    "$(type -P claude)" \
-    --disallowed-tools WebSearch,WebFetch \
-    --append-system-prompt "No preamble, no postamble, no flattery — just do the task and stop." "$@"
-}
-
-# The same security-work reroute as claude-sec, on opencode instead of Claude
-# Code. opencode is provider-agnostic, so it sends GLM a request GLM understands
-# rather than an Anthropic-shaped one, and none of the workarounds claude-sec
-# needs apply: no suppressing pre-release body fields, no pinning every model
-# slot against a stray Claude id, no denying web tools - websearch and webfetch
-# are opencode's own client-side tools here, so web research keeps working.
+# opencode on GLM 5.2 through OpenRouter, for security work whose artifacts
+# (exploit payloads, C2 traces) commercial-model guardrails refuse to analyze.
+# opencode is used rather than Claude Code because it is provider-agnostic: it
+# sends GLM a request GLM understands, where Claude Code treats any custom base
+# URL as an Anthropic-format endpoint and has to be talked out of Anthropic-only
+# body fields and Anthropic server tools OpenRouter cannot execute for a
+# non-Claude model. websearch and webfetch are opencode's own client-side tools,
+# so web research works here instead of failing the turn.
 #
 # OPENCODE_CONFIG points at the profile in the omakub repo rather than installing
 # it to ~/.config/opencode, so a plain `opencode` run keeps its own global config
 # and provider. OPENCODE_MODEL repeats the model from that profile because a
 # project-local opencode.json would otherwise be able to reroute a security
-# session onto another provider - keep the two in sync. The OpenRouter key comes
-# from its own op env file (shipped by migration 1785412526) and is resolved at
-# launch, so it never lands on disk or in opencode's auth.json. Same memory cap
-# and same hand-approval posture as claude-sec, enforced by the profile's
-# permission block rather than a flag.
+# session onto another provider - keep the two in sync. The @preset/claude-sec
+# suffix is an OpenRouter preset pinning the host to novita/fp8; the name is
+# historical, retune the pin on openrouter.ai. The key comes from its own op env
+# file and is resolved at launch, so it never lands on disk or in opencode's
+# auth.json. Memory is capped as for `claude`, and every mutating action is
+# approved by hand via the profile's permission block.
 opencode-sec() {
   local model="openrouter/z-ai/glm-5.2@preset/claude-sec"
   systemd-run --user --scope -q \
