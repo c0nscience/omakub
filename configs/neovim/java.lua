@@ -2,6 +2,13 @@ return {
   "mfussenegger/nvim-jdtls",
   opts = {
     jdtls = function(config)
+      -- open_classfile blocks the main loop per jdt:// buffer via vim.wait, and
+      -- when triggered from inside an LSP callback (snacks picker results that
+      -- contain library classes) the decompile response can never arrive during
+      -- the wait — every library hit burns the FULL timeout with the UI frozen.
+      -- 500ms caps a 40-hit references list at ~4s instead of ~200s.
+      require("jdtls").settings.jdt_uri_timeout_ms = 500
+
       -- One shared jar index across all project workspaces: the same dependency
       -- jars were being re-indexed (~1.7GB duplicated) once per workspace, and
       -- page-cached once per running server. jdtls does not create the dir itself.
