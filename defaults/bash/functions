@@ -209,6 +209,28 @@ claude() {
 # normal `claude` sessions never inherit ANTHROPIC_AUTH_TOKEN — that variable
 # overrides subscription auth. Same memory-capped scope as `claude`, but no
 # bypassPermissions: a third-party model gets each command approved by hand.
+#
+# Everything after ANTHROPIC_BASE_URL exists because Claude Code treats a custom
+# base URL as an Anthropic-format endpoint and sends GLM the full request it
+# would send api.anthropic.com. Two classes of 400 follow, and only the env
+# vars below suppress them — request shape is not something the preset can fix:
+#   - Anthropic-only body fields (context_management, output_config, the beta
+#     tool fields strict/defer_loading) come back as "Extra inputs are not
+#     permitted". Claude Code does NOT auto-retry these, so they surface as a
+#     hard failure; DISABLE_EXPERIMENTAL_BETAS drops them at the client.
+#   - Any model slot left unpinned resolves to a real Claude id and OpenRouter
+#     rejects it. ANTHROPIC_MODEL only covers the main slot, so the alias slots
+#     and the subagent slot are pinned to the same model. ANTHROPIC_SMALL_FAST_MODEL
+#     is deprecated in favour of ANTHROPIC_DEFAULT_HAIKU_MODEL, which is also
+#     what background tasks use.
+# ANTHROPIC_API_KEY is unset rather than set empty: an empty-but-present value
+# still sends an x-api-key header alongside the bearer token and trips the
+# two-credential-sources warning. ANTHROPIC_AUTH_TOKEN already outranks the
+# subscription on its own. Nonessential traffic is off so a session opened to
+# keep security artifacts away from Anthropic does not also phone home for
+# version checks and telemetry — it disables auto-update for this session only.
+# No token-limit overrides: the pinned novita host serves 1M context / 128k
+# output, the same envelope Claude Code already assumes.
 claude-sec() {
   if [[ -v CLAUDECODE ]]; then
     echo "claude-sec: already inside a Claude Code session — running plain claude (no GLM reroute)" >&2
@@ -220,10 +242,15 @@ claude-sec() {
     -p MemoryHigh=8G -p MemoryMax=12G -p MemorySwapMax=4G \
     op run --env-file="$HOME/.config/op/.env" \
     --env-file="$HOME/.config/op/claude-sec.env" --no-masking -- \
-    env ANTHROPIC_BASE_URL="https://openrouter.ai/api" \
-    ANTHROPIC_API_KEY="" \
+    env -u ANTHROPIC_API_KEY \
+    ANTHROPIC_BASE_URL="https://openrouter.ai/api" \
     ANTHROPIC_MODEL="$model" \
-    ANTHROPIC_SMALL_FAST_MODEL="$model" \
+    ANTHROPIC_DEFAULT_OPUS_MODEL="$model" \
+    ANTHROPIC_DEFAULT_SONNET_MODEL="$model" \
+    ANTHROPIC_DEFAULT_HAIKU_MODEL="$model" \
+    CLAUDE_CODE_SUBAGENT_MODEL="$model" \
+    CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=1 \
+    CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 \
     "$(type -P claude)" \
     --append-system-prompt "No preamble, no postamble, no flattery — just do the task and stop." "$@"
 }
