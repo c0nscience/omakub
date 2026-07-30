@@ -15,6 +15,24 @@ return {
     end,
   },
 
+  -- jdt.ls emits a $/progress job for EVERY per-file validation and diagnostics
+  -- publish - one toast per keystroke-flush. The work itself is correct and
+  -- cheap (single document); only the toast stack is noise, and it reads like a
+  -- meltdown the moment the server is briefly busy. Recurring one-shot jobs get
+  -- skipped; real long-running progress (import, build) still shows.
+  {
+    "folke/noice.nvim",
+    opts = function(_, opts)
+      opts.routes = opts.routes or {}
+      for _, title in ipairs({ "Validate documents", "Publish Diagnostics" }) do
+        table.insert(opts.routes, {
+          filter = { event = "lsp", kind = "progress", find = title },
+          opts = { skip = true },
+        })
+      end
+    end,
+  },
+
   {
   "mfussenegger/nvim-jdtls",
   init = function()
