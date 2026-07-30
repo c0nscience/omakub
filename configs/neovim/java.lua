@@ -2,12 +2,19 @@ return {
   "mfussenegger/nvim-jdtls",
   opts = {
     jdtls = function(config)
-      -- open_classfile blocks the main loop per jdt:// buffer via vim.wait, and
-      -- when triggered from inside an LSP callback (snacks picker results that
-      -- contain library classes) the decompile response can never arrive during
-      -- the wait — every library hit burns the FULL timeout with the UI frozen.
-      -- 500ms caps a 40-hit references list at ~4s instead of ~200s.
-      require("jdtls").settings.jdt_uri_timeout_ms = 500
+      -- NOTE: jdt_uri_timeout_ms is deliberately left at its 5000ms default.
+      -- Lowering it looks tempting because open_classfile vim.waits on it per
+      -- jdt:// buffer (jdtls.lua:1282) and snacks' picker bufloads every jdt://
+      -- result. But vim.wait does pump the scheduled callback queue even nested
+      -- inside another LSP handler (verified with a stub server: a nested request
+      -- answered in 201ms, not the timeout), so a full burn means the server did
+      -- not answer java/classFileContents at all - which a shorter timeout cannot
+      -- fix. It would only trade the freeze for blank picker rows and an empty
+      -- buffer, and it also gates the wait-for-client-attach at jdtls.lua:1247,
+      -- where expiring early hard-errors the BufReadCmd via assert(client).
+      -- The real trigger was source attachment; see maven/eclipse downloadSources
+      -- below. If library-heavy pickers freeze again, fix the picker path (skip
+      -- the wait when the buffer is not displayed) rather than the timeout.
 
       -- One shared jar index across all project workspaces: the same dependency
       -- jars were being re-indexed (~1.7GB duplicated) once per workspace, and
@@ -55,10 +62,17 @@ return {
 
       -- Throttle textDocument/didChange from nvim's 150ms default so sustained
       -- typing drives the reconcile/diagnostics/inlay-hint chain ~3x/s instead of
-      -- ~7x/s (a lone keystroke after a pause still flushes at once). Must live on
-      -- the config, not LspAttach: nvim captures the debounce at didOpen — before
-      -- LspAttach fires — and thereafter only ever lowers it. Lower to 150 if
-      -- completion feels stale.
+      -- ~7x/s. Must live on the config, not LspAttach: nvim captures the debounce
+      -- at didOpen - before LspAttach fires - and thereafter only ever lowers it.
+      -- Two limits worth knowing (_changetracking.lua:47-52, 137):
+      -- change tracking is grouped by sync-kind + position-encoding ACROSS clients,
+      -- and the group takes the MINIMUM debounce, so as soon as any default-flags
+      -- server (lua_ls, jsonls, ...) attaches anywhere in the session the group
+      -- drops back to 150ms for jdtls too - and until then this 300ms throttles
+      -- those other clients as well. Also, every outgoing request force-flushes
+      -- pending changes (client.lua:731), so completion can never read stale text
+      -- and each new completion context bypasses the debounce anyway; the only
+      -- cost here is up to +150ms of diagnostic/inlay-hint lag.
       config.flags = vim.tbl_deep_extend("force", config.flags or {}, {
         debounce_text_changes = 300,
       })
@@ -182,7 +196,12 @@ return {
         -- Server default is ON (VS Code ships false): any future codelens refresh
         -- would run a workspace reference search per method. Parity guard.
         referencesCodeLens = { enabled = false },
-        -- Full "all" hints recompute over RPC behind the reconcile queue on big files.
+        -- Shrinks per-request server compute, but NOT the cadence: nvim re-requests
+        -- hints for the WHOLE document on every didChange flush (inlay_hint.lua:93,
+        -- 266) and LazyVim enables hints for every filetype. If per-keystroke cost
+        -- ever needs to go further, `opts.inlay_hints.exclude = { "java" }` on the
+        -- LazyVim lsp spec drops the request entirely - stronger, at the price of
+        -- having no Java inlay hints at all.
         inlayHints = {
           parameterNames = { enabled = "literals" },
         },
