@@ -265,6 +265,33 @@ claude-sec() {
     --append-system-prompt "No preamble, no postamble, no flattery — just do the task and stop." "$@"
 }
 
+# The same security-work reroute as claude-sec, on opencode instead of Claude
+# Code. opencode is provider-agnostic, so it sends GLM a request GLM understands
+# rather than an Anthropic-shaped one, and none of the workarounds claude-sec
+# needs apply: no suppressing pre-release body fields, no pinning every model
+# slot against a stray Claude id, no denying web tools - websearch and webfetch
+# are opencode's own client-side tools here, so web research keeps working.
+#
+# OPENCODE_CONFIG points at the profile in the omakub repo rather than installing
+# it to ~/.config/opencode, so a plain `opencode` run keeps its own global config
+# and provider. OPENCODE_MODEL repeats the model from that profile because a
+# project-local opencode.json would otherwise be able to reroute a security
+# session onto another provider - keep the two in sync. The OpenRouter key comes
+# from its own op env file (shipped by migration 1785412526) and is resolved at
+# launch, so it never lands on disk or in opencode's auth.json. Same memory cap
+# and same hand-approval posture as claude-sec, enforced by the profile's
+# permission block rather than a flag.
+opencode-sec() {
+  local model="openrouter/z-ai/glm-5.2@preset/claude-sec"
+  systemd-run --user --scope -q \
+    -p MemoryHigh=8G -p MemoryMax=12G -p MemorySwapMax=4G \
+    op run --env-file="$HOME/.config/op/opencode-sec.env" --no-masking -- \
+    env OPENCODE_CONFIG="$OMAKUB_PATH/configs/opencode/sec.json" \
+    OPENCODE_MODEL="$model" \
+    OPENCODE_DISABLE_SHARE=1 \
+    "$(type -P opencode)" "$@"
+}
+
 # List the running jdtls language servers — one JVM per open Java project — with
 # the project each serves and its memory, so idle ones eating RAM are easy to spot.
 # Neovim keeps a project's jdtls alive until you quit that nvim. Run `jdtls-ps -k`
