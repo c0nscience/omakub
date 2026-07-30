@@ -19,6 +19,12 @@ if [ ! -d "$HOME/.config/nvim" ]; then
   # Remove the .git folder, so you can add it to your own repo later
   rm -rf ~/.config/nvim/.git
 
+  # Always-on runtime perf log (main-loop stalls, slow LSP requests, memory
+  # growth) so a freeze can be diagnosed from ~/.local/state/nvim/perf.log
+  # afterwards instead of by instrumenting a live instance. :PerfLog to read it.
+  mkdir -p ~/.config/nvim/plugin
+  cp ~/.local/share/omakub/configs/neovim/perflog.lua ~/.config/nvim/plugin/
+
   # Make everything match the terminal transparency
   mkdir -p ~/.config/nvim/plugin/after
   cp ~/.local/share/omakub/configs/neovim/transparency.lua ~/.config/nvim/plugin/after/
