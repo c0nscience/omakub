@@ -22,14 +22,17 @@ vm.swappiness = 180
 vm.page-cluster = 0
 EOF
 
-# A partially-configured zram0 from an earlier attempt makes the generator fail
-# with "Device or resource busy" - reset it first (only if it is not in use).
-if [ -e /sys/block/zram0 ] && ! swapon --show=NAME --noheadings | grep -q '^/dev/zram0$'; then
-  sudo zramctl --reset /dev/zram0 2>/dev/null || true
+# Runtime activation. At boot the generator handles this alone; at runtime a
+# restart can race a queued start job against a device the failed previous run
+# left half-initialized ("Device or resource busy"), so: stop everything, reset
+# the device, clear the failed state, then issue ONE start.
+if ! swapon --show=NAME --noheadings | grep -q '^/dev/zram0$'; then
+  sudo systemctl daemon-reload
+  sudo systemctl stop systemd-zram-setup@zram0.service 2>/dev/null || true
+  [ -e /sys/block/zram0 ] && sudo zramctl --reset /dev/zram0 2>/dev/null || true
+  sudo systemctl reset-failed systemd-zram-setup@zram0.service 2>/dev/null || true
+  sudo systemctl start systemd-zram-setup@zram0.service
 fi
-
-sudo systemctl daemon-reload
-sudo systemctl restart systemd-zram-setup@zram0.service
 sudo sysctl --load /etc/sysctl.d/99-omakub-zram.conf >/dev/null
 
 swapon --show
