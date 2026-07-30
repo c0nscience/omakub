@@ -9,15 +9,21 @@
   // opencode is provider-agnostic, which is the whole reason this exists: the
   // equivalent Claude Code wrapper had to be talked out of sending Anthropic-only
   // request fields and Anthropic server tools that OpenRouter cannot execute for
-  // a non-Claude model, and was dropped for this. Here websearch and webfetch
-  // are opencode's own client-side tools, so they work against GLM instead of
-  // failing the turn.
+  // a non-Claude model, and was dropped for this. Here web access is opencode's
+  // own client-side webfetch tool, so it runs against GLM instead of failing the
+  // turn.
   //
-  // The @preset/claude-sec suffix resolves an OpenRouter preset that pins the
-  // host to novita/fp8 (endpoint tag `novita/fp8`, 1M context / 128k output).
-  // Change the pin on openrouter.ai, not here.
-  "model": "openrouter/z-ai/glm-5.2@preset/claude-sec",
-  "small_model": "openrouter/z-ai/glm-5.2@preset/claude-sec",
+  // No OpenRouter preset, deliberately. This used to request
+  // z-ai/glm-5.2@preset/claude-sec, a preset carried over from the Claude Code
+  // wrapper. A preset can hold OpenRouter *server tools* - web search, advisors,
+  // subagents - and OpenRouter unions those into the request's tool array, so
+  // every turn shipped a server tool opencode never registered and could not
+  // answer. OpenRouter then killed sessions a few turns in with HTTP 400
+  // `Server tool request failed` (metadata.provider_name null: the request never
+  // reached a host). Routing lives here now, where it is visible, version
+  // controlled, and cannot add tools behind opencode's back.
+  "model": "openrouter/z-ai/glm-5.2",
+  "small_model": "openrouter/z-ai/glm-5.2",
 
   "provider": {
     "openrouter": {
@@ -27,8 +33,23 @@
         "apiKey": "{env:OPENROUTER_API_KEY}"
       },
       "models": {
-        "z-ai/glm-5.2@preset/claude-sec": {
-          "name": "GLM 5.2 · sec (novita/fp8)"
+        "z-ai/glm-5.2": {
+          "name": "GLM 5.2 · sec",
+          "options": {
+            // Endpoint allowlist replacing the pin the preset used to hold.
+            // Every entry is an fp8 host serving the full 1M context with at
+            // least 128k output and tool calling; novita keeps first place
+            // because that is what the preset pinned. allow_fallbacks:false
+            // stops OpenRouter routing to any other GLM 5.2 host, while the
+            // list being longer than one means a single host answering
+            // "Provider returned error" no longer ends the turn.
+            // Re-check the hosts with:
+            //   curl -s https://openrouter.ai/api/v1/models/z-ai/glm-5.2/endpoints
+            "provider": {
+              "order": ["novita/fp8", "z-ai/fp8", "baseten/fp8", "alibaba/fp8"],
+              "allow_fallbacks": false
+            }
+          }
         }
       }
     }

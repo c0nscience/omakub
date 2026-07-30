@@ -206,21 +206,22 @@ claude() {
 # sends GLM a request GLM understands, where Claude Code treats any custom base
 # URL as an Anthropic-format endpoint and has to be talked out of Anthropic-only
 # body fields and Anthropic server tools OpenRouter cannot execute for a
-# non-Claude model. websearch and webfetch are opencode's own client-side tools,
-# so web research works here instead of failing the turn.
+# non-Claude model. webfetch is opencode's own client-side tool, so web access
+# works here instead of failing the turn.
 #
 # OPENCODE_CONFIG points at the profile in the omakub repo rather than installing
 # it to ~/.config/opencode, so a plain `opencode` run keeps its own global config
 # and provider. OPENCODE_MODEL repeats the model from that profile because a
 # project-local opencode.json would otherwise be able to reroute a security
-# session onto another provider - keep the two in sync. The @preset/claude-sec
-# suffix is an OpenRouter preset pinning the host to novita/fp8; the name is
-# historical, retune the pin on openrouter.ai. The key comes from its own op env
-# file and is resolved at launch, so it never lands on disk or in opencode's
+# session onto another provider - keep the two in sync. No @preset suffix: an
+# OpenRouter preset can attach server tools that OpenRouter unions into the
+# request, which broke sessions with `Server tool request failed`, so the host
+# allowlist lives in the profile instead. The key comes from its own op env file
+# and is resolved at launch, so it never lands on disk or in opencode's
 # auth.json. Memory is capped as for `claude`, and every mutating action is
 # approved by hand via the profile's permission block.
 opencode-sec() {
-  local model="openrouter/z-ai/glm-5.2@preset/claude-sec"
+  local model="openrouter/z-ai/glm-5.2"
   systemd-run --user --scope -q \
     -p MemoryHigh=8G -p MemoryMax=12G -p MemorySwapMax=4G \
     op run --env-file="$HOME/.config/op/opencode-sec.env" --no-masking -- \
