@@ -231,6 +231,15 @@ claude() {
 # version checks and telemetry — it disables auto-update for this session only.
 # No token-limit overrides: the pinned novita host serves 1M context / 128k
 # output, the same envelope Claude Code already assumes.
+#
+# WebSearch and WebFetch are denied because both are Anthropic *server* tools
+# (web_search_20260209, web_fetch_20260209) - the endpoint is expected to run
+# them itself, which OpenRouter cannot do for a non-Claude model. It accepts the
+# definitions, so turns succeed until the model actually reaches for one, then
+# the whole turn dies with 400 "Server tool request failed". There is no env var
+# for this; denying the two tools is the only client-side lever. Web research in
+# a claude-sec session therefore goes through bash (curl), which is already
+# hand-approved per command since this wrapper has no bypassPermissions.
 claude-sec() {
   if [[ -v CLAUDECODE ]]; then
     echo "claude-sec: already inside a Claude Code session — running plain claude (no GLM reroute)" >&2
@@ -252,6 +261,7 @@ claude-sec() {
     CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=1 \
     CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 \
     "$(type -P claude)" \
+    --disallowed-tools WebSearch,WebFetch \
     --append-system-prompt "No preamble, no postamble, no flattery — just do the task and stop." "$@"
 }
 
