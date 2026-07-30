@@ -77,6 +77,54 @@ return {
       -- walk that mostly dies as -32801 mid-typing and is recomputed. Treesitter
       -- already highlights Java; only semantic modifiers are lost.
       vim.lsp.semantic_tokens.enable(false, { client_id = client.id })
+
+      -- jdtls contributes the generate-family actions TWICE: once as an Eclipse
+      -- quick assist (kind "quickassist") and once as a VS Code source action
+      -- (kind "source.generate.*"). VS Code shows only one set because it groups
+      -- the menu by kind; nvim requests no kind filter and renders the response
+      -- flat, so each of those actions appears twice in the picker. Both twins
+      -- carry the identical java.action.* command, so dropping the quickassist
+      -- copy of an action that also arrives as a source action is behaviour-
+      -- neutral. Quick assists with no twin (e.g. "Generate Getter for 'x'") and
+      -- every source action are kept. Done at the response level because
+      -- code_action's own `filter` sees one action at a time and therefore cannot
+      -- know whether a twin exists.
+      if not client.omakub_dedup_code_actions then
+        client.omakub_dedup_code_actions = true
+        local unpack = table.unpack or unpack
+        local request = client.request
+
+        local function dedup(result)
+          if type(result) ~= "table" then
+            return result
+          end
+          local from_source = {}
+          for _, action in ipairs(result) do
+            if action.title and action.kind and action.kind ~= "quickassist" then
+              from_source[action.title] = true
+            end
+          end
+          return vim.tbl_filter(function(action)
+            return not (action.kind == "quickassist" and from_source[action.title])
+          end, result)
+        end
+
+        -- Both call forms have to survive: nvim core uses client:request(...),
+        -- while nvim-jdtls' own util.lua still uses the deprecated no-self
+        -- client.request(...), so the method is either the 1st or 2nd argument.
+        client.request = function(...)
+          local argc = select("#", ...)
+          local argv = { ... }
+          local base = type(argv[1]) == "string" and 0 or 1
+          if argv[base + 1] == "textDocument/codeAction" and type(argv[base + 3]) == "function" then
+            local handler = argv[base + 3]
+            argv[base + 3] = function(err, result, ctx, config)
+              return handler(err, dedup(result), ctx, config)
+            end
+          end
+          return request(unpack(argv, 1, argc))
+        end
+      end
     end,
 
     -- Don't hot-swap classes on every save while debugging (rebuild+redefine over
