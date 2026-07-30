@@ -196,6 +196,31 @@ return {
           end, result)
         end
 
+        -- Measured 2026-07-30: every test start paid 4.1-24s inside jdt.ls's
+        -- resolveJUnitLaunchArguments (plus findTestTypesAndMethods and
+        -- getClasspaths), recomputing the 48-module classpath behind the build
+        -- queue on EVERY run. The responses are pure functions of their
+        -- arguments (the TestRunner port is substituted client-side per run,
+        -- nvim-jdtls dap.lua:455), so serve them from cache instantly and
+        -- refresh in the background: each run then waits only on the JVM and
+        -- the test (~2-3s), and the recomputation happens off the critical
+        -- path. A pom change is picked up one run late - self-healing.
+        local TEST_CMD_CACHE = {
+          ["vscode.java.test.findTestTypesAndMethods"] = true,
+          ["vscode.java.test.search.codelens"] = true,
+          ["vscode.java.test.junit.argument"] = true,
+          ["java.project.getClasspaths"] = true,
+        }
+        local cache, cache_keys = {}, {}
+        local perfpath = vim.fs.joinpath(vim.fn.stdpath("state"), "perf.log")
+        local function perflog(line)
+          local f = io.open(perfpath, "a")
+          if f then
+            f:write(os.date("%Y-%m-%dT%H:%M:%S") .. " TESTC " .. line .. "\n")
+            f:close()
+          end
+        end
+
         -- Both call forms have to survive: nvim core uses client:request(...),
         -- while nvim-jdtls' own util.lua still uses the deprecated no-self
         -- client.request(...), so the method is either the 1st or 2nd argument.
@@ -203,10 +228,45 @@ return {
           local argc = select("#", ...)
           local argv = { ... }
           local base = type(argv[1]) == "string" and 0 or 1
-          if argv[base + 1] == "textDocument/codeAction" and type(argv[base + 3]) == "function" then
-            local handler = argv[base + 3]
+          local method, params, handler = argv[base + 1], argv[base + 2], argv[base + 3]
+
+          if method == "textDocument/codeAction" and type(handler) == "function" then
             argv[base + 3] = function(err, result, ctx, config)
               return handler(err, dedup(result), ctx, config)
+            end
+          elseif
+            method == "workspace/executeCommand"
+            and type(params) == "table"
+            and TEST_CMD_CACHE[params.command]
+            and type(handler) == "function"
+          then
+            local key = params.command .. "\0" .. vim.json.encode(params.arguments or {})
+            local hit = cache[key]
+            local t0 = vim.uv.hrtime()
+            if hit ~= nil then
+              -- serve the cached result now; the real request below only
+              -- refreshes the cache
+              vim.schedule(function()
+                handler(nil, vim.deepcopy(hit), { client_id = client.id, method = method, params = params })
+              end)
+              argv[base + 3] = function(err, result)
+                if not err and result ~= nil then
+                  cache[key] = result
+                end
+                perflog(("hit %s (refresh %.0fms)"):format(params.command, (vim.uv.hrtime() - t0) / 1e6))
+              end
+            else
+              argv[base + 3] = function(err, result, ctx, config)
+                if not err and result ~= nil then
+                  if #cache_keys >= 40 then
+                    cache[table.remove(cache_keys, 1)] = nil
+                  end
+                  cache[key] = result
+                  table.insert(cache_keys, key)
+                end
+                perflog(("miss %s (%.0fms)"):format(params.command, (vim.uv.hrtime() - t0) / 1e6))
+                return handler(err, result, ctx, config)
+              end
             end
           end
           return request(unpack(argv, 1, argc))
