@@ -32,6 +32,11 @@ if [ ! -d "$HOME/.config/nvim" ]; then
   # Turn off relative line numbers
   echo "vim.opt.relativenumber = false" >>~/.config/nvim/lua/config/options.lua
 
+  # LazyVim's jumpoptions=view drops nvim 0.12's "clean" default, so ctrl-o
+  # walks into unloaded buffers restored from shada - i.e. jumps from other
+  # nvim instances/sessions. Re-add it so the jumplist stays session-local.
+  echo 'vim.opt.jumpoptions:append("clean")' >>~/.config/nvim/lua/config/options.lua
+
   # Ensure editor.neo-tree is used by default
   cp ~/.local/share/omakub/configs/neovim/lazyvim.json ~/.config/nvim/
 
