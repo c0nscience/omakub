@@ -78,17 +78,25 @@ return {
       -- already highlights Java; only semantic modifiers are lost.
       vim.lsp.semantic_tokens.enable(false, { client_id = client.id })
 
-      -- jdtls contributes the generate-family actions TWICE: once as an Eclipse
+      -- jdtls contributes several generate actions TWICE: once as an Eclipse
       -- quick assist (kind "quickassist") and once as a VS Code source action
-      -- (kind "source.generate.*"). VS Code shows only one set because it groups
-      -- the menu by kind; nvim requests no kind filter and renders the response
-      -- flat, so each of those actions appears twice in the picker. Both twins
-      -- carry the identical java.action.* command, so dropping the quickassist
-      -- copy of an action that also arrives as a source action is behaviour-
-      -- neutral. Quick assists with no twin (e.g. "Generate Getter for 'x'") and
-      -- every source action are kept. Done at the response level because
-      -- code_action's own `filter` sees one action at a time and therefore cannot
-      -- know whether a twin exists.
+      -- (kind "source.*"). VS Code shows only one set because it groups the menu
+      -- by kind; nvim requests no kind filter and renders the response flat, so
+      -- each of those appeared twice in the picker.
+      -- Drop the quickassist copy only when a same-titled source action carries
+      -- an IDENTICAL command: that holds for the constructors, toString,
+      -- hashCodeEquals, overrideMethods and delegateMethods families, where both
+      -- copies just invoke the same java.action.* and the duplicate is pure noise.
+      -- Matching on the title ALONE over-reaches: the accessors family
+      -- ("Generate Getters"/"Setters"/"Getters and Setters") carries no command
+      -- (resolve-only) and its two copies are NOT equivalent - the quickassist is
+      -- scoped to the SELECTED fields while the source action covers the whole
+      -- type. Verified via codeAction/resolve on a selection of 2 of 3 fields:
+      -- quickassist -> getB()+getC(), source action -> getA()+getB()+getC().
+      -- Those stay duplicated on purpose; collapsing them would silently widen
+      -- the edit and make the selection-scoped action unreachable.
+      -- Done at the response level because code_action's own `filter` sees one
+      -- action at a time and therefore cannot know whether a twin exists.
       if not client.omakub_dedup_code_actions then
         client.omakub_dedup_code_actions = true
         local unpack = table.unpack or unpack
@@ -98,14 +106,18 @@ return {
           if type(result) ~= "table" then
             return result
           end
-          local from_source = {}
+          local twin = {}
           for _, action in ipairs(result) do
-            if action.title and action.kind and action.kind ~= "quickassist" then
-              from_source[action.title] = true
+            if action.title and action.kind and action.kind ~= "quickassist" and type(action.command) == "table" then
+              twin[action.title] = action.command
             end
           end
           return vim.tbl_filter(function(action)
-            return not (action.kind == "quickassist" and from_source[action.title])
+            return not (
+              action.kind == "quickassist"
+              and type(action.command) == "table"
+              and vim.deep_equal(action.command, twin[action.title])
+            )
           end, result)
         end
 
