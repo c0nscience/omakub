@@ -44,6 +44,44 @@ return {
         "--jvm-arg=-Djdt.core.sharedIndexLocation=" .. shared_index,
       })
 
+      -- Annotation processing during RECONCILE means it runs on every keystroke.
+      -- dwmp pulls in hibernate-jpamodelgen, and the server log showed the JPA
+      -- metamodel generator running 180x for 139 validations, with validate
+      -- averaging 115ms (worst 3.9s) - that is the per-keystroke lag. JDT's
+      -- aptEnabled stays on, so builds still generate the metamodel (and
+      -- target/generated-sources already holds it); only the reconcile pass is
+      -- switched off, which is what IntelliJ does by default.
+      -- reconcileEnabled defaults to true and eclipse.jdt.ls exposes no java.*
+      -- equivalent (only the Gradle flag), so it has to be written into the
+      -- workspace's Eclipse instance preferences before the server starts.
+      -- Instance scope inside the jdtls cache dir, never the project's .settings:
+      -- m2e rewrites those on import and they live in the user's repo.
+      local data_dir
+      for i, arg in ipairs(config.cmd) do
+        if arg == "-data" or arg == "--data" then
+          data_dir = config.cmd[i + 1]
+          break
+        end
+      end
+      if data_dir then
+        local settings_dir = data_dir .. "/.metadata/.plugins/org.eclipse.core.runtime/.settings"
+        vim.fn.mkdir(settings_dir, "p")
+        local function ensure(file, key, value)
+          local path = settings_dir .. "/" .. file
+          local lines = vim.fn.filereadable(path) == 1 and vim.fn.readfile(path)
+            or { "eclipse.preferences.version=1" }
+          for _, line in ipairs(lines) do
+            if line:match("^" .. vim.pesc(key) .. "=") then
+              return -- already set (possibly by hand); don't fight it
+            end
+          end
+          table.insert(lines, key .. "=" .. value)
+          vim.fn.writefile(lines, path)
+        end
+        ensure("org.eclipse.jdt.apt.core.prefs", "org.eclipse.jdt.apt.reconcileEnabled", "false")
+        ensure("org.eclipse.m2e.apt.prefs", "org.eclipse.m2e.apt.aptProcessDuringReconcile", "false")
+      end
+
       -- LazyVim's `$MASON/share/java-test/*.jar` glob feeds jdtls two non-OSGi jars
       -- that its bundle loader rejects on every startup ("Failed to load extension
       -- bundles"). Drop them so the test/debug bundles load cleanly.
