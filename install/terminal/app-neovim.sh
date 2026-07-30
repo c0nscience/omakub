@@ -35,13 +35,19 @@ if [ ! -d "$HOME/.config/nvim" ]; then
   # The shada file merges jumplists from every nvim instance and imports the
   # union at startup, so ctrl-o walks into files from other projects/sessions.
   # The VimEnter clearjumps drops the imported list so the jumplist stays
-  # session-local; marks/oldfiles/registers keep persisting. Deliberately NOT
-  # jumpoptions+=clean: it prunes on buffer unload, so closing a buffer would
-  # erase the way back to it via ctrl-o.
+  # session-local; marks/oldfiles/registers keep persisting. clearjumps is
+  # per-window and shada populates every startup window, hence the loop.
+  # We rely on LazyVim's jumpoptions=view, which drops nvim 0.12's "clean"
+  # default - wanted here, since "clean" prunes a buffer's entries on unload and
+  # would erase the ctrl-o way back into a buffer you just closed.
   cat >>~/.config/nvim/lua/config/options.lua <<'LUA'
 vim.api.nvim_create_autocmd("VimEnter", {
   callback = function()
-    vim.cmd.clearjumps()
+    for _, win in ipairs(vim.api.nvim_list_wins()) do
+      vim.api.nvim_win_call(win, function()
+        vim.cmd.clearjumps()
+      end)
+    end
   end,
 })
 LUA
