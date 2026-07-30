@@ -5,23 +5,31 @@
 # zram registers at priority 100, above the swap files.
 sudo apt install -y systemd-zram-generator
 
-if [ ! -f /etc/systemd/zram-generator.conf ]; then
-  sudo tee /etc/systemd/zram-generator.conf >/dev/null <<'EOF'
+# The package ships /etc/systemd/zram-generator.conf as a conffile (with a
+# [zram0] section on kernel defaults), so never test for its absence - use the
+# drop-in directory, which cleanly overrides it and survives package upgrades.
+sudo mkdir -p /etc/systemd/zram-generator.conf.d
+sudo tee /etc/systemd/zram-generator.conf.d/omakub.conf >/dev/null <<'EOF'
 [zram0]
 zram-size = min(ram / 2, 8192)
 compression-algorithm = zstd
 EOF
-fi
 
 # Kernel guidance for zram-backed swap: prefer swapping (it is cheap now) and
 # drop readahead clustering (random access into zram has no seek cost).
-if [ ! -f /etc/sysctl.d/99-omakub-zram.conf ]; then
-  sudo tee /etc/sysctl.d/99-omakub-zram.conf >/dev/null <<'EOF'
+sudo tee /etc/sysctl.d/99-omakub-zram.conf >/dev/null <<'EOF'
 vm.swappiness = 180
 vm.page-cluster = 0
 EOF
+
+# A partially-configured zram0 from an earlier attempt makes the generator fail
+# with "Device or resource busy" - reset it first (only if it is not in use).
+if [ -e /sys/block/zram0 ] && ! swapon --show=NAME --noheadings | grep -q '^/dev/zram0$'; then
+  sudo zramctl --reset /dev/zram0 2>/dev/null || true
 fi
 
 sudo systemctl daemon-reload
-sudo systemctl restart systemd-zram-setup@zram0.service 2>/dev/null || true
+sudo systemctl restart systemd-zram-setup@zram0.service
 sudo sysctl --load /etc/sysctl.d/99-omakub-zram.conf >/dev/null
+
+swapon --show
