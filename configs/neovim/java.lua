@@ -44,44 +44,6 @@ return {
         "--jvm-arg=-Djdt.core.sharedIndexLocation=" .. shared_index,
       })
 
-      -- Annotation processing during RECONCILE means it runs on every keystroke.
-      -- dwmp pulls in hibernate-jpamodelgen, and the server log showed the JPA
-      -- metamodel generator running 180x for 139 validations, with validate
-      -- averaging 115ms (worst 3.9s) - that is the per-keystroke lag. JDT's
-      -- aptEnabled stays on, so builds still generate the metamodel (and
-      -- target/generated-sources already holds it); only the reconcile pass is
-      -- switched off, which is what IntelliJ does by default.
-      -- reconcileEnabled defaults to true and eclipse.jdt.ls exposes no java.*
-      -- equivalent (only the Gradle flag), so it has to be written into the
-      -- workspace's Eclipse instance preferences before the server starts.
-      -- Instance scope inside the jdtls cache dir, never the project's .settings:
-      -- m2e rewrites those on import and they live in the user's repo.
-      local data_dir
-      for i, arg in ipairs(config.cmd) do
-        if arg == "-data" or arg == "--data" then
-          data_dir = config.cmd[i + 1]
-          break
-        end
-      end
-      if data_dir then
-        local settings_dir = data_dir .. "/.metadata/.plugins/org.eclipse.core.runtime/.settings"
-        vim.fn.mkdir(settings_dir, "p")
-        local function ensure(file, key, value)
-          local path = settings_dir .. "/" .. file
-          local lines = vim.fn.filereadable(path) == 1 and vim.fn.readfile(path)
-            or { "eclipse.preferences.version=1" }
-          for _, line in ipairs(lines) do
-            if line:match("^" .. vim.pesc(key) .. "=") then
-              return -- already set (possibly by hand); don't fight it
-            end
-          end
-          table.insert(lines, key .. "=" .. value)
-          vim.fn.writefile(lines, path)
-        end
-        ensure("org.eclipse.jdt.apt.core.prefs", "org.eclipse.jdt.apt.reconcileEnabled", "false")
-        ensure("org.eclipse.m2e.apt.prefs", "org.eclipse.m2e.apt.aptProcessDuringReconcile", "false")
-      end
-
       -- LazyVim's `$MASON/share/java-test/*.jar` glob feeds jdtls two non-OSGi jars
       -- that its bundle loader rejects on every startup ("Failed to load extension
       -- bundles"). Drop them so the test/debug bundles load cleanly.
@@ -212,6 +174,10 @@ return {
           -- Server default matches case-insensitively; firstLetter (the VS Code
           -- default) keeps the list smaller and better ranked.
           matchCase = "firstLetter",
+          -- Caveat of maxResults=0: there is then NO server-side cap, so a
+          -- one-letter prefix against a large classpath returns everything in one
+          -- multi-MB response. Still cheaper than a full ECJ pass per keystroke,
+          -- but set a finite limit here if huge unprefixed completions ever hitch.
         },
         -- Server default is ON (VS Code ships false): any future codelens refresh
         -- would run a workspace reference search per method. Parity guard.
@@ -220,13 +186,13 @@ return {
         inlayHints = {
           parameterNames = { enabled = "literals" },
         },
-        -- Skip the synchronous ECJ build before every debug/test launch; autobuild
-        -- (enabled by default) keeps compiled classes fresh on save.
-        debug = {
-          settings = {
-            forceBuildBeforeLaunch = false,
-          },
-        },
+        -- NOTE: no forceBuildBeforeLaunch here on purpose. It is a vscode-java-debug
+        -- CLIENT setting (VS Code calls the java.buildWorkspace command itself), not
+        -- a jdt.ls preference - absent from Preferences and from java-debug's
+        -- DebugSettings, so sending it does nothing. nvim-jdtls never builds before
+        -- launch either, so a test started right after an edit races the async
+        -- autobuild and can run stale classes. Wire require("jdtls").compile() into
+        -- the test keymaps if that ever bites.
         configuration = {
           runtimes = {
             {
