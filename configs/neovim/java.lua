@@ -112,6 +112,48 @@ return {
         "--jvm-arg=-Djdt.core.sharedIndexLocation=" .. shared_index,
       })
 
+      -- Stop annotation processing from running on every reconcile. Measured
+      -- 2026-07-31 09:10 in the server log: 8 Hibernate JPA metamodel generator
+      -- rounds in ONE editing minute (3-9/min all morning, 135 that session),
+      -- while the reconciles themselves took 2-4ms. The client saw 9s
+      -- completions and documentHighlights with NO client-side stall logged -
+      -- i.e. the requests sat in the server queue behind those APT rounds.
+      -- JDT's reconcileEnabled defaults to true and eclipse.jdt.ls exposes no
+      -- java.* equivalent (only the Gradle flag), so it has to be written into
+      -- the workspace's Eclipse instance preferences before the server starts.
+      -- Instance scope inside the jdtls cache dir, never the project's
+      -- .settings, which m2e rewrites and which lives in the user's repo.
+      -- aptEnabled stays true, so builds still generate the metamodel and
+      -- target/generated-sources keeps resolving; only the per-keystroke pass
+      -- is dropped, which is what IntelliJ does by default.
+      -- NOTE: Eclipse reads instance preferences at startup, so this takes
+      -- effect for a server the next time it starts, not for a running one.
+      local data_dir
+      for i, arg in ipairs(config.cmd) do
+        if arg == "-data" or arg == "--data" then
+          data_dir = config.cmd[i + 1]
+          break
+        end
+      end
+      if data_dir then
+        local settings_dir = data_dir .. "/.metadata/.plugins/org.eclipse.core.runtime/.settings"
+        vim.fn.mkdir(settings_dir, "p")
+        local path = settings_dir .. "/org.eclipse.jdt.apt.core.prefs"
+        local lines = vim.fn.filereadable(path) == 1 and vim.fn.readfile(path)
+          or { "eclipse.preferences.version=1" }
+        local present = false
+        for _, line in ipairs(lines) do
+          if line:match("^org%.eclipse%.jdt%.apt%.reconcileEnabled=") then
+            present = true
+            break
+          end
+        end
+        if not present then
+          table.insert(lines, "org.eclipse.jdt.apt.reconcileEnabled=false")
+          vim.fn.writefile(lines, path)
+        end
+      end
+
       -- LazyVim's `$MASON/share/java-test/*.jar` glob feeds jdtls two non-OSGi jars
       -- that its bundle loader rejects on every startup ("Failed to load extension
       -- bundles"). Drop them so the test/debug bundles load cleanly.
