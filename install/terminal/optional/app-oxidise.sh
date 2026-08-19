@@ -4,12 +4,15 @@
 curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 
 # install rust tools
-cargo binstall -y -q xh ripgrep bat eza zoxide fd-find mprocs bacon tokei sqlx-cli yazi-fm yazi-cli
+cargo binstall -y -q xh ripgrep bat eza zoxide fd-find mprocs bacon tokei sqlx-cli ouch yazi-fm yazi-cli
 cargo install --locked ncspot tree-sitter-cli
 
 rustup component add rust-analyzer
 
 mise use -g fzf@latest
+
+# yazi plugins (ouch.yazi) now that the yazi binary and `ouch` exist
+source $OMAKUB_PATH/install/terminal/optional/app-yazi-plugins.sh
 
 # yazi was installed above (into ~/.cargo/bin); (re)generate its GNOME launcher
 # now that the binary exists. Skip on terminal-only hosts. Run in a subshell with
