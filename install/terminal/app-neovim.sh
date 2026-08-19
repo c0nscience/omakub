@@ -25,6 +25,11 @@ if [ ! -d "$HOME/.config/nvim" ]; then
   mkdir -p ~/.config/nvim/plugin
   cp ~/.local/share/omakub/configs/neovim/perflog.lua ~/.config/nvim/plugin/
 
+  # Cap outstanding textDocument/documentHighlight requests at one per buffer,
+  # so a slow/busy LSP server can't accumulate a pile of them and blow up
+  # nvim's own memory. See configs/neovim/lsp-coalesce-highlight.lua.
+  cp ~/.local/share/omakub/configs/neovim/lsp-coalesce-highlight.lua ~/.config/nvim/plugin/
+
   # Make everything match the terminal transparency
   mkdir -p ~/.config/nvim/plugin/after
   cp ~/.local/share/omakub/configs/neovim/transparency.lua ~/.config/nvim/plugin/after/
