@@ -52,4 +52,55 @@ if command -v atuin &> /dev/null; then
   # place atuin records the preceding command once more.
   __omakub_restore_histcontrol() { HISTCONTROL=ignoreboth; }
   precmd_functions+=(__omakub_restore_histcontrol)
+
+  # Diagnostic, temporary: atuin silently loses commands. Comparing
+  # ~/.bash_history against history.db shows ~5% of executed commands never
+  # reach atuin, with no error anywhere -- its own hook runs
+  # `atuin history start ... 2>/dev/null`, so a refused or failed write is
+  # discarded in silence. Trace both sides of that boundary so a lost command
+  # can be pinned to a layer:
+  #
+  #   EXEC line, id=<uuid>   atuin accepted the write; any loss is downstream
+  #   EXEC line, id=EMPTY    atuin refused or failed it (history_filter, error)
+  #   no EXEC line at all    the preexec hook never fired for that command
+  #
+  # A PROMPT line with no EXEC line before it means bash ran a command (or you
+  # pressed Enter on an empty prompt) without preexec firing. Cross-check the
+  # log against ~/.bash_history to tell those apart.
+  #
+  # Kept fork-free: every value below is a builtin or a shell variable, so this
+  # adds no process per prompt. Set OMAKUB_ATUIN_TRACE=0 to disable, and remove
+  # this block once the dropped-command bug is understood.
+  if [[ ${OMAKUB_ATUIN_TRACE:-1} != 0 ]]; then
+    OMAKUB_ATUIN_TRACE_LOG="${OMAKUB_ATUIN_TRACE_LOG:-$HOME/.local/state/omakub/atuin-trace.log}"
+    [[ -d ${OMAKUB_ATUIN_TRACE_LOG%/*} ]] || mkdir -p "${OMAKUB_ATUIN_TRACE_LOG%/*}"
+    __omakub_atuin_trace_n=0
+
+    __omakub_atuin_trace_exec() {
+      # Appended after atuin's own preexec, so ATUIN_HISTORY_ID is already set:
+      # empty means `atuin history start` returned nothing for this command.
+      printf '%s\tpid=%s\tses=%s\tbackend=%s\tEXEC\tid=%s\tcmd=%s\n' \
+        "${EPOCHREALTIME:-0}" "$$" "${ATUIN_SESSION:0:12}" \
+        "${ATUIN_PREEXEC_BACKEND:-unset}" "${ATUIN_HISTORY_ID:-EMPTY}" "$1" \
+        >>"$OMAKUB_ATUIN_TRACE_LOG" 2>/dev/null
+    }
+
+    __omakub_atuin_trace_prompt() {
+      local status=$?
+      printf '%s\tpid=%s\tses=%s\tPROMPT\texit=%s\n' \
+        "${EPOCHREALTIME:-0}" "$$" "${ATUIN_SESSION:0:12}" "$status" \
+        >>"$OMAKUB_ATUIN_TRACE_LOG" 2>/dev/null
+      # Bound the log without paying a stat() per prompt.
+      if (( ++__omakub_atuin_trace_n % 500 == 0 )); then
+        local size
+        size=$(stat -c%s "$OMAKUB_ATUIN_TRACE_LOG" 2>/dev/null) || return 0
+        (( size > 20971520 )) && mv -f "$OMAKUB_ATUIN_TRACE_LOG" \
+          "$OMAKUB_ATUIN_TRACE_LOG.1" 2>/dev/null
+      fi
+      return 0
+    }
+
+    preexec_functions+=(__omakub_atuin_trace_exec)
+    precmd_functions+=(__omakub_atuin_trace_prompt)
+  fi
 fi
