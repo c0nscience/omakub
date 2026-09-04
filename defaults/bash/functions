@@ -215,7 +215,7 @@ claude() {
   local envfile="$HOME/.config/op/.env" need_op=false
   if [[ -r "$envfile" ]]; then
     local var
-    for var in $(grep -oE '^[A-Za-z_][A-Za-z0-9_]*' "$envfile"); do
+    for var in $(command grep -oE '^[A-Za-z_][A-Za-z0-9_]*' "$envfile"); do
       [[ -z "${!var+x}" ]] && { need_op=true; break; }
     done
   fi
