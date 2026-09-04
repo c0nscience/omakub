@@ -184,20 +184,47 @@ function y() {
 # hits the scope's MemoryMax and the kernel kills the biggest process inside
 # the scope only, instead of exhausting RAM+swap and freezing the machine
 # (2026-07-17: two leaked workers ate 26G and froze the box for 40 min).
-# Inside a Claude Code shell (CLAUDECODE set) run the plain binary: the
-# session is already inside a capped scope, and a nested systemd-run scope
-# would be a sibling that escapes the parent's limits.
+#
+# Used to skip the scope whenever CLAUDECODE was set, on the theory that
+# meant "already inside a capped scope". Wrong signal: CLAUDECODE just means
+# some ancestor process was a Claude session. Herdr's daemon was itself
+# started from inside a Claude Code session, so every pane it manages
+# inherits CLAUDECODE — and those panes are exactly the uncapped, no-secrets,
+# no-default-flags case this wrapper exists for (many agents in parallel).
+# So we test actual state instead of an inherited env var:
+#   - scope: is this process already inside a claude-*.scope cgroup leaf
+#     (named via --unit="claude-$$" below)? Checked from /proc/self/cgroup,
+#     not by walking ancestors and testing memory.max — a system-wide slice
+#     limit up there would otherwise look like "already capped" everywhere.
+#   - secrets: are the vars named in the op env file already in the
+#     environment? A nested launch inside an already-wrapped session has
+#     them; re-running `op run` there is wasted work and a possible prompt.
+# Default flags always apply, nested or not; "$@" comes last so callers
+# (including Herdr's --remote-control <name>) can override.
 claude() {
-  if [[ -v CLAUDECODE ]]; then
-    command claude "$@"
-    return
+  local flags=(--append-system-prompt "No preamble, no postamble, no flattery — just do the task and stop." --permission-mode bypassPermissions --effort ultracode)
+
+  local in_scope=false
+  if [[ -r /proc/self/cgroup ]]; then
+    local cg leaf
+    cg="$(</proc/self/cgroup)"
+    leaf="${cg##*/}"
+    [[ "$leaf" == claude-*.scope ]] && in_scope=true
   fi
-  systemd-run --user --scope -q \
-    -p MemoryHigh=8G -p MemoryMax=12G -p MemorySwapMax=4G \
-    op run --env-file="$HOME/.config/op/.env" --no-masking -- \
-    "$(type -P claude)" \
-    --append-system-prompt "No preamble, no postamble, no flattery — just do the task and stop." \
-    --permission-mode bypassPermissions --effort ultracode "$@"
+
+  local envfile="$HOME/.config/op/.env" need_op=false
+  if [[ -r "$envfile" ]]; then
+    local var
+    for var in $(grep -oE '^[A-Za-z_][A-Za-z0-9_]*' "$envfile"); do
+      [[ -z "${!var+x}" ]] && { need_op=true; break; }
+    done
+  fi
+
+  local cmd=("$(type -P claude)" "${flags[@]}" "$@")
+  $need_op && cmd=(op run --env-file="$envfile" --no-masking -- "${cmd[@]}")
+  $in_scope || cmd=(systemd-run --user --scope -q --unit="claude-$$" -p MemoryHigh=8G -p MemoryMax=12G -p MemorySwapMax=4G "${cmd[@]}")
+
+  "${cmd[@]}"
 }
 
 # opencode on GLM 5.2 through OpenRouter, for security work whose artifacts
