@@ -201,6 +201,11 @@ function y() {
 #     them; re-running `op run` there is wasted work and a possible prompt.
 # Default flags always apply, nested or not; "$@" comes last so callers
 # (including Herdr's --remote-control <name>) can override.
+#
+# `op run` stays INSIDE the systemd scope so the whole session tree, op
+# included, is covered by the memory cap. A 2026-09-04 experiment reversed
+# this to support a cgroup-keyed polkit rule; the rule was rejected (see
+# configs/1password/README.md) and the ordering was reverted with it.
 claude() {
   local flags=(--append-system-prompt "No preamble, no postamble, no flattery — just do the task and stop." --permission-mode bypassPermissions --effort ultracode)
 
