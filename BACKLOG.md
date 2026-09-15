@@ -58,3 +58,31 @@ commit ("replace alacritty and zellij with kitty") and re-running the installers
   protocol — doesn't address the trigger.
 - **zellij + sixel terminal (foot/wezterm)**: keeps navigation untouched but keeps the
   unstable zellij server; not pursued.
+
+## jdtls follow-ups
+
+Left open after the 2026-09-15 consolidation of `configs/neovim/java.lua` into
+four blocks (JVM args, settings, capabilities, client-side cuts):
+
+- **File watching needs `inotify-tools`.** java.lua advertises
+  `didChangeWatchedFiles` only when `inotifywait` is on PATH, so jdtls learns
+  about git checkouts, generated sources and pom edits made outside nvim only
+  on machines that have it. Adding the package to `apps-terminal.sh` is a
+  fleet-wide change and still needs a decision. Until then: a save in the
+  affected module (m2e refreshes that module), `:JdtCompile full` twice, or
+  `:JdtUpdateConfig!`. The RelativePattern filter in java.lua has never seen
+  a live registration; on the first machine with `inotifywait`, check
+  `:checkhealth vim.lsp` and `pgrep -af inotifywait` (one process per jdtls
+  client, on root_dir) before trusting it.
+- **m2e-apt duplicates Maven's annotation output.** In dwmp, jdtls's own
+  Eclipse APT (querydsl-apt on `.factorypath`) writes `Q*.java` into
+  `target/generated-sources/annotations` while `apt-maven-plugin` writes the
+  same classes to `target/generated-sources/java`; both are source roots, so
+  the copies collide after every `mvn clean`. The same m2e-apt prefs
+  (`.settings/org.eclipse.jdt.apt.core.prefs`, git-ignored, per module) set
+  `reconcileEnabled=true`, which shadowed the workspace-level
+  `reconcileEnabled=false` the old java.lua wrote (dropped in the
+  consolidation as ineffective). Candidate: m2e-apt `maven_execution` mode.
+- **Dropped as unmeasured:** `-XX:+UseStringDeduplication`,
+  `-XX:MaxMetaspaceSize=512m`, `flags.debounce_text_changes` (clamped to
+  150ms by other clients anyway). Re-add only with a measurement.

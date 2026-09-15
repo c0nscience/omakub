@@ -30,6 +30,16 @@ if [ ! -d "$HOME/.config/nvim" ]; then
   # nvim's own memory. See configs/neovim/lsp-coalesce-highlight.lua.
   cp ~/.local/share/omakub/configs/neovim/lsp-coalesce-highlight.lua ~/.config/nvim/plugin/
 
+  # bufferline scans every workspace diagnostic on each refresh, and jdtls
+  # publishes diagnostics for every source file; coalesce refresh bursts into
+  # one redraw. See configs/neovim/bufferline-coalesce-refresh.lua.
+  cp ~/.local/share/omakub/configs/neovim/bufferline-coalesce-refresh.lua ~/.config/nvim/plugin/
+
+  # jdtls request-level hacks (code-action dedup, test-command cache), kept
+  # apart from the jdtls config in lua/plugins/java.lua so they can be dropped
+  # on their own. See configs/neovim/jdtls-experimental.lua.
+  cp ~/.local/share/omakub/configs/neovim/jdtls-experimental.lua ~/.config/nvim/plugin/
+
   # Make everything match the terminal transparency
   mkdir -p ~/.config/nvim/plugin/after
   cp ~/.local/share/omakub/configs/neovim/transparency.lua ~/.config/nvim/plugin/after/
