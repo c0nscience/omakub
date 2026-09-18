@@ -16,6 +16,11 @@ vpn-config() {
 
 vc() {
     local user pw otp
+    if openvpn3 config-dump --config dilax | grep -q '^dhcp-option DOMAIN '; then
+      openvpn3 config-manage --config dilax --dns-scope tunnel --quiet
+    else
+      echo "vc: dilax profile has no 'dhcp-option DOMAIN' line, keeping dns-scope global" >&2
+    fi
     user=$(gum spin --show-output --title "Fetching username from 1Password..." -- \
       op item get 'AD Account' --fields username --vault DILAX)
     pw=$(gum spin --show-output --title "Fetching password from 1Password..." -- \
