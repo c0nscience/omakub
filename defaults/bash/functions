@@ -193,7 +193,7 @@ function y() {
 # no-default-flags case this wrapper exists for (many agents in parallel).
 # So we test actual state instead of an inherited env var:
 #   - scope: is this process already inside a claude-*.scope cgroup leaf
-#     (named via --unit="claude-$$" below)? Checked from /proc/self/cgroup,
+#     (named via --unit below)? Checked from /proc/self/cgroup,
 #     not by walking ancestors and testing memory.max — a system-wide slice
 #     limit up there would otherwise look like "already capped" everywhere.
 #   - secrets: are the vars named in the op env file already in the
@@ -206,6 +206,16 @@ function y() {
 # included, is covered by the memory cap. A 2026-09-04 experiment reversed
 # this to support a cgroup-keyed polkit rule; the rule was rejected (see
 # configs/1password/README.md) and the ordering was reverted with it.
+#
+# The scope is named claude-<shell pid>-<ns timestamp>, not just claude-$$:
+# $$ is the shell's PID, so every launch from one shell asked for the same
+# unit, and systemd-run failed with "Unit claude-<pid>.scope was already
+# loaded" whenever the previous run's scope still existed — a lingering MCP
+# server or op child, two sessions started from one shell, or systemd's GC
+# not done yet (2026-09-18). The suffix makes each launch unique; the claude-
+# prefix is what the scope test above keys on. --collect unloads a scope that
+# ended failed (an OOM kill under MemoryMax) too; without it such scopes stay
+# loaded until reset-failed, and unique names would let them pile up unseen.
 claude() {
   local flags=(--append-system-prompt "No preamble, no postamble, no flattery — just do the task and stop." --permission-mode bypassPermissions --effort ultracode)
 
@@ -227,7 +237,7 @@ claude() {
 
   local cmd=("$(type -P claude)" "${flags[@]}" "$@")
   $need_op && cmd=(op run --env-file="$envfile" --no-masking -- "${cmd[@]}")
-  $in_scope || cmd=(systemd-run --user --scope -q --unit="claude-$$" -p MemoryHigh=8G -p MemoryMax=12G -p MemorySwapMax=4G "${cmd[@]}")
+  $in_scope || cmd=(systemd-run --user --scope -q --collect --unit="claude-$$-$(date +%s%N)" -p MemoryHigh=8G -p MemoryMax=12G -p MemorySwapMax=4G "${cmd[@]}")
 
   "${cmd[@]}"
 }
