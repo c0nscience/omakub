@@ -9,6 +9,7 @@ n() { if [ "$#" -eq 0 ]; then nvim .; else nvim "$@"; fi; }
 vpn-config() {
     gum spin --title "Fetching VPN config from 1Password..." -- \
       op document get vpn-config --vault DILAX --out-file dilax.ovpn
+    grep -q '^dhcp-option DOMAIN ' dilax.ovpn || printf '\ndhcp-option DOMAIN dilax.com\n' >> dilax.ovpn
     gum spin --show-output --title "Importing VPN config..." -- \
       openvpn3 config-import --config dilax.ovpn --name dilax -p --tag dilax
     rm dilax.ovpn
