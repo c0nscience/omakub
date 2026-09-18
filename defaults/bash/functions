@@ -7,9 +7,13 @@ n() { if [ "$#" -eq 0 ]; then nvim .; else nvim "$@"; fi; }
 
 # OpenVPN
 vpn-config() {
+    local path
     gum spin --title "Fetching VPN config from 1Password..." -- \
       op document get vpn-config --vault DILAX --out-file dilax.ovpn
     grep -q '^dhcp-option DOMAIN ' dilax.ovpn || printf '\ndhcp-option DOMAIN dilax.com\n' >> dilax.ovpn
+    for path in $(openvpn3 configs-list --json | jq -r 'to_entries[] | select(.value.name == "dilax") | .key'); do
+      openvpn3 config-remove --path "$path" --force
+    done
     gum spin --show-output --title "Importing VPN config..." -- \
       openvpn3 config-import --config dilax.ovpn --name dilax -p --tag dilax
     rm dilax.ovpn
