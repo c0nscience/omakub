@@ -227,7 +227,7 @@ function y() {
 # ended failed (an OOM kill under MemoryMax) too; without it such scopes stay
 # loaded until reset-failed, and unique names would let them pile up unseen.
 claude() {
-  local flags=(--append-system-prompt "No preamble, no postamble, no flattery — just do the task and stop." --permission-mode bypassPermissions --effort ultracode)
+  local flags=(--append-system-prompt "No preamble, no postamble, no flattery — just do the task and stop." --permission-mode bypassPermissions --effort high)
 
   local in_scope=false
   if [[ -r /proc/self/cgroup ]]; then
