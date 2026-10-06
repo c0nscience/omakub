@@ -90,6 +90,12 @@ LUA
   cp ~/.local/share/omakub/configs/neovim/kotlin.lua ~/.config/nvim/lua/plugins/
   cp ~/.local/share/omakub/configs/neovim/csvview.lua ~/.config/nvim/lua/plugins/
   cp ~/.local/share/omakub/configs/neovim/sql.lua ~/.config/nvim/lua/plugins/
+
+  # Default sqruff rules for SQL outside a project with its own .sqruff
+  if [ ! -f ~/.config/sqruff/.sqruff ]; then
+    mkdir -p ~/.config/sqruff
+    cp ~/.local/share/omakub/configs/sqruff/.sqruff ~/.config/sqruff/
+  fi
 fi
 
 # Replace desktop launcher with one running inside Kitty
