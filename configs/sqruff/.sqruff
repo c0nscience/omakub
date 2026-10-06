@@ -1,7 +1,16 @@
 [sqruff]
 rules = core,layout
+exclude_rules = CP02
 
 [sqruff:layout:type:alias_expression]
 spacing_before = align
 align_within = select_clause
 align_scope = bracketed
+
+[sqruff:layout:type:data_type]
+spacing_before = align
+align_within = create_table_statement
+
+[sqruff:layout:type:column_constraint_segment]
+spacing_before = align
+align_within = create_table_statement
