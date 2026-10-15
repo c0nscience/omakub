@@ -4,7 +4,7 @@
 if [[ -v OMAKUB_FIRST_RUN_LANGUAGES ]]; then
   languages=$OMAKUB_FIRST_RUN_LANGUAGES
 else
-  AVAILABLE_LANGUAGES=("Ruby on Rails" "Node.js" "Go" "PHP" "Python" "Elixir" "Rust" "Java")
+  AVAILABLE_LANGUAGES=("Ruby on Rails" "Node.js" "Go" "PHP" "Python" "Elixir" "Rust" "Java" ".NET")
   languages=$(gum choose "${AVAILABLE_LANGUAGES[@]}" --no-limit --height 10 --header "Select programming languages")
 fi
 
@@ -42,6 +42,9 @@ if [[ -n "$languages" ]]; then
     Java)
       mise install java@zulu-24 java@zulu-21 java@zulu-17 java@zulu-8 maven@3
       mise use --global java@zulu-17 maven@3
+      ;;
+    .NET)
+      mise use --global dotnet@10
       ;;
     esac
   done
