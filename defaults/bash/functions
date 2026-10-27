@@ -252,6 +252,23 @@ claude() {
   "${cmd[@]}"
 }
 
+# Plain opencode gets the same op-injected secrets as `claude`, from the same env
+# file and under the same "already in the environment" test, so it picks up
+# OP_SERVICE_ACCOUNT_TOKEN. No memory scope or default flags: only the secrets.
+opencode() {
+  local envfile="$HOME/.config/op/.env" need_op=false
+  if [[ -r "$envfile" ]]; then
+    local var
+    for var in $(command grep -oE '^[A-Za-z_][A-Za-z0-9_]*' "$envfile"); do
+      [[ -z "${!var+x}" ]] && { need_op=true; break; }
+    done
+  fi
+
+  local cmd=("$(type -P opencode)" "$@")
+  $need_op && cmd=(op run --env-file="$envfile" --no-masking -- "${cmd[@]}")
+  "${cmd[@]}"
+}
+
 # opencode on GLM 5.2 through OpenRouter, for security work whose artifacts
 # (exploit payloads, C2 traces) commercial-model guardrails refuse to analyze.
 # opencode is used rather than Claude Code because it is provider-agnostic: it
